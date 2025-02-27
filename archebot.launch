@@ -1,0 +1,4 @@
+<launch>
+        <node pkg="archebot" type="archebot.py" name="archebot" output="screen">
+        </node>
+</launch>
