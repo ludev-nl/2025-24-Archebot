@@ -5,7 +5,7 @@ import os
 BRIDGE = CvBridge()
 
 # Download from: https://github.com/opencv/opencv/tree/master/data/haarcascades
-FACE_CASCADE = cv2.CascadeClassifier(os.path.abspath("archebot/include/haarcascade_frontalface_default.xml"))
+FACE_CASCADE = cv2.CascadeClassifier(os.path.abspath("../include/haarcascade_frontalface_default.xml"))
 
 
 def main(data) -> None:
