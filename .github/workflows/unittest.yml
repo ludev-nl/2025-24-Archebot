@@ -10,10 +10,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Run Tests
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.8"
           cache: pip
+      - name: Run Tests
       - run:  |
           pip install pytest
           pytest
