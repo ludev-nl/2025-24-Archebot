@@ -1,0 +1,2 @@
+rospy==1.17.0
+sensor_msgs==1.13.1
