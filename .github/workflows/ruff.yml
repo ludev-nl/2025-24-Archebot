@@ -11,8 +11,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run:  |
-          curl -LsSf https://astral.sh/ruff/install.sh | sh
-          source $HOME/.local/bin/env
-          ruff check --fix
-          ruff format
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.8"
+          cache: pip
+      - run: python3 -m pip install ruff
+      - run: ruff check --fix
+      - run: ruff format
