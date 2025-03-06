@@ -14,7 +14,6 @@ jobs:
         with:
           python-version: "3.8"
           cache: pip
-      - name: Run Tests
       - run:  |
           pip install pytest
           pytest
