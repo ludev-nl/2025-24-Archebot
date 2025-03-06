@@ -15,5 +15,6 @@ jobs:
         with:
           python-version: "3.8"
           cache: pip
+      - run: python3 -m pip install ruff
       - run: ruff check --fix
       - run: ruff format
