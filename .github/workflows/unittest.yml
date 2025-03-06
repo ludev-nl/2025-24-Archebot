@@ -11,6 +11,9 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Run Tests
-        run:  |
+        with:
+          python-version: "3.8"
+          cache: pip
+      - run:  |
           pip install pytest
           pytest
