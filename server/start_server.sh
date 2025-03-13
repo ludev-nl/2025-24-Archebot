@@ -4,7 +4,7 @@
 set -e
 
 # Get the script's directory
-SCRIPT_DIR="$(cd "$(server "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="$(dirname "$(readlink -f $0)")"
 
 # Navigate to script directory
 cd "$SCRIPT_DIR"
