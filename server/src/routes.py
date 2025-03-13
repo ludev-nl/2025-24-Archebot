@@ -1,9 +1,10 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, redirect
 import sqlite3
 import os
 import base64
 from datavalidation import LocationLogsSchema, LogsSchema, ShardsSchema
 from marshmallow import ValidationError
+import markdown
 
 app = Flask(__name__)
 
@@ -15,6 +16,27 @@ def get_db_connection():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn
+
+@app.route('/', methods=['GET'])
+def hello():
+    return redirect("/docs", code=302)
+
+@app.route('/docs', methods=['GET'])
+def get_docs():
+    try:
+        # Path to the Markdown file
+        doc_file_path = os.path.join(os.path.dirname(__file__), '../docs/routes.md')
+        
+        # Read the Markdown file
+        with open(doc_file_path, 'r') as f:
+            markdown_content = f.read()
+        
+        # Convert Markdown to HTML
+        html_content = markdown.markdown(markdown_content)
+        return html_content, 200
+        # return html_content, 200, {'Content-Type': 'text/html'}
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/locationlogs', methods=['GET'])
 def get_location_logs():
