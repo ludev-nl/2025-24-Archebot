@@ -10,6 +10,7 @@ app = Flask(__name__)
 
 # Get the directory where the script is located
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
+ROUTES_DIR = os.path.join(SCRIPT_DIR, '../db/routes/')
 DB_PATH = os.path.join(SCRIPT_DIR, '../db', 'database.db')
 
 def get_db_connection():
@@ -149,6 +150,17 @@ def add_shard():
         return jsonify({"message": "Shard added"}), 201
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+    
+@app.route('/routes', methods=['GET'])
+def get_gpx_files():
+    # TODO: add path to files in response, need to expose ../db/routes/ somehow
+    
+    if not os.path.exists(ROUTES_DIR):
+        return jsonify({"error": "Routes directory does not exist"}), 404
+    
+    # Iterate over all files in ROUTES_DIR and return all .gpx files
+    gpx_files = [f for f in os.listdir(ROUTES_DIR) if f.endswith('.gpx')]
+    return jsonify({"routes": gpx_files}), 200
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

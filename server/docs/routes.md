@@ -136,6 +136,19 @@ The API is hosted on the Leorover: `http://10.0.0.1:5000`
 
 ---
 
+#### **GET** `/routes`
+- **Description:** Get the names of all routes.
+- **Response:**
+  - **200 OK:** A list of routes in the following format:
+    ```json
+    {
+      "gpx_files": [
+        "test_route.gpx"
+        ]
+    }
+
+  - **404 Unauthorized:** If the routes directory does not exist.
+
 ## Notes
 - The API uses Flask as framework for the webserver.
 - The API uses Marshmallow schemas for data validation.
