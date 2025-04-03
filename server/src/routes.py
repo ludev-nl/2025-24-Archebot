@@ -2,7 +2,7 @@ from flask import Flask, request, jsonify, redirect, send_from_directory
 import sqlite3
 import os
 import base64
-from datavalidation import LocationLogsSchema, LogsSchema, ShardsSchema
+from datavalidation import LocationLogsSchema, LogsSchema, ShardsSchema, RouteSchema
 from marshmallow import ValidationError
 import markdown
 
@@ -168,7 +168,26 @@ def get_gpx_file(filename):
         return jsonify({"error": "File not found or is invalid"}), 404
     
     return send_from_directory(ROUTES_DIR, filename)
+
+@app.route('/routes/<filename>', methods=['POST'])
+def upload_gpx_file(filename):
+    schema = RouteSchema()
     
+    try:
+        schema.load(request.files)
+    except ValidationError as err:
+        return jsonify({"error": err.messages}), 400
+    
+    if not filename.endswith('.gpx'):
+        return jsonify({"error": "Invalid file type, only .gpx files are allowed"}), 400
+
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({"error": "No file selected"}), 400
+
+    file_path = os.path.join(ROUTES_DIR, filename)
+    file.save(file_path)
+    return jsonify({"message": "File uploaded successfully"}), 201
   
 # Start server on port 5000    
 if __name__ == '__main__':

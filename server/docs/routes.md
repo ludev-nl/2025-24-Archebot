@@ -155,6 +155,12 @@ The API is hosted on the Leorover: `http://10.0.0.1:5000`
   - **200 OK:** The .gpx file specified in the request.
   - **404 Page Not Found:** The file does not exist or is not valid.
 
+#### **POST** `/routes/<filename>`
+- **Description:** Save a file to the server. Must be a .gpx file.
+- **Response:** 
+  - **201 OK:** The .gpx file was succesfully saved.
+  - **400 Bad Request:** Validation error.
+
 ## Notes
 - The API uses Flask as framework for the webserver.
 - The API uses Marshmallow schemas for data validation.

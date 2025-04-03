@@ -13,3 +13,6 @@ class ShardsSchema(Schema):
     latitude = fields.Float(required=True)
     longitude = fields.Float(required=True)
     photo = fields.Str(required=False)
+    
+class RouteSchema(Schema):
+    file = fields.Raw(type='file', required=True)
