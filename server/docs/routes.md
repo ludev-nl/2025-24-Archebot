@@ -130,11 +130,7 @@ The API is hosted on the Leorover: `http://10.0.0.1:5000`
 
 ---
 
-## Error Responses
-- **400 Bad Request:** Validation failed (returned with error messages).
-- **500 Internal Server Error:** Issues with database operations or unexpected errors.
-
----
+## 4. **Routes**
 
 #### **GET** `/routes`
 - **Description:** Get the names of all routes.
@@ -160,6 +156,8 @@ The API is hosted on the Leorover: `http://10.0.0.1:5000`
 - **Response:** 
   - **201 OK:** The .gpx file was succesfully saved.
   - **400 Bad Request:** Validation error.
+
+---
 
 ## Notes
 - The API uses Flask as framework for the webserver.
