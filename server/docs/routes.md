@@ -149,6 +149,12 @@ The API is hosted on the Leorover: `http://10.0.0.1:5000`
 
   - **404 Unauthorized:** If the routes directory does not exist.
 
+#### **GET** `/routes/<filename>`
+- **Description:** Returns the file specified. Must have a .gpx file extention.
+- **Response:**
+  - **200 OK:** The .gpx file specified in the request.
+  - **404 Page Not Found:** The file does not exist or is not valid.
+
 ## Notes
 - The API uses Flask as framework for the webserver.
 - The API uses Marshmallow schemas for data validation.

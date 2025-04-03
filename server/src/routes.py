@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, redirect
+from flask import Flask, request, jsonify, redirect, send_from_directory
 import sqlite3
 import os
 import base64
@@ -35,7 +35,6 @@ def get_docs():
         # Convert Markdown to HTML
         html_content = markdown.markdown(markdown_content)
         return html_content, 200
-        # return html_content, 200, {'Content-Type': 'text/html'}
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -79,13 +78,11 @@ def get_logs():
     conn = get_db_connection()
     logs = conn.execute('SELECT * FROM logs').fetchall()
     conn.close()
-    return jsonify([dict(log) for log in logs])
+    return jsonify([dict(log) for log in logs]), 200
 
 @app.route('/logs', methods=['POST'])
 def add_log():
-    
     data = request.json
-    
     schema = LogsSchema()
     
     try:
@@ -153,8 +150,6 @@ def add_shard():
     
 @app.route('/routes', methods=['GET'])
 def get_gpx_files():
-    # TODO: add path to files in response, need to expose ../db/routes/ somehow
-    
     if not os.path.exists(ROUTES_DIR):
         return jsonify({"error": "Routes directory does not exist"}), 404
     
@@ -162,5 +157,19 @@ def get_gpx_files():
     gpx_files = [f for f in os.listdir(ROUTES_DIR) if f.endswith('.gpx')]
     return jsonify({"routes": gpx_files}), 200
 
+@app.route('/routes/<filename>', methods=['GET'])
+def get_gpx_file(filename):
+    if not os.path.exists(ROUTES_DIR):
+        return jsonify({"error": "Routes directory does not exist"}), 404
+    
+    file_path = os.path.join(ROUTES_DIR, filename)
+    
+    if not os.path.isfile(file_path) or not filename.endswith(".gpx"):
+        return jsonify({"error": "File not found or is invalid"}), 404
+    
+    return send_from_directory(ROUTES_DIR, filename)
+    
+  
+# Start server on port 5000    
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
