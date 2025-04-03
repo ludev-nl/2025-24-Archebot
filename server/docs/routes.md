@@ -155,7 +155,7 @@ The API is hosted on the Leorover: `http://10.0.0.1:5000`
 ---
 
 #### **POST** `/routes/<filename>`
-- **Description:** Save a file to the server. Must be a .gpx file.
+- **Description:** Save a file to the server. Must be a .gpx file. Request must be of type `multipart/form-data` with key `file` and value the actual .gpx file. 
 - **Response:** 
     - **201 OK:** The .gpx file was succesfully saved.
     - **400 Bad Request:** Validation error.
