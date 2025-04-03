@@ -1,7 +1,7 @@
 import sqlite3
 import datetime
 
-from routes import DB_PATH
+from .server.src.routes import DB_PATH
 
 refresh_rate = 100
 count = 0

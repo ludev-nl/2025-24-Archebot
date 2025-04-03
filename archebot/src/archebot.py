@@ -8,9 +8,7 @@ from sensor_msgs.msg import NavSatFix
 from sensor_msgs.msg import Image
 
 import gps, depth_camera, camera
-
-from server.src.gps_logger import log_location
-
+from gps_logger import log_location
 
 def ros_exit() -> None:
     sys.exit()
