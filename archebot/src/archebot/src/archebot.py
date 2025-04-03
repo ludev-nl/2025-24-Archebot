@@ -8,7 +8,7 @@ from sensor_msgs.msg import NavSatFix
 from sensor_msgs.msg import Image
 
 import gps, depth_camera
-
+from gps_logger import log_location
 
 def ros_exit() -> None:
     sys.exit()
@@ -22,5 +22,7 @@ if "__main__" == __name__:
     # rospy.Subscriber("/ublox/fix", NavSatFix, gps.main)
     rospy.Subscriber("/d455_camera/depth/image_rect_raw", Image, depth_camera.main)
     # rospy.Subscriber("/camera/image_raw", Image, camera.main)
+    
+    rospy.Subscriber("/ublox/fix", NavSatFix, log_location)
     
     rospy.spin()
