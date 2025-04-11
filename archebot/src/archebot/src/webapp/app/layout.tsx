@@ -1,13 +1,13 @@
 import type React from "react"
+import "./globals.css"
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
-import "./globals.css"
 
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Interactive Map with Leaflet",
-  description: "A responsive map application built with Next.js and Leaflet",
+  title: "Offline Geographic Bounding Box Selector",
+  description: "Draw a box on a map to get latitude and longitude coordinates - works offline!",
 }
 
 export default function RootLayout({
@@ -16,9 +16,13 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
+    <html lang="en" className="light">
       <body className={inter.className}>{children}</body>
     </html>
   )
 }
+
+
+
+
 
