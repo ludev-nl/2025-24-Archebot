@@ -6,6 +6,7 @@ import "leaflet/dist/leaflet.css"
 import { MapContainer, TileLayer, FeatureGroup } from "react-leaflet"
 import { EditControl } from "react-leaflet-draw"
 
+// define the box coordinates called when coords are created, edited or deleted
 interface MapWithBoundingBoxProps {
   onBoundingBoxChange: (boundingBox: {
     southWest: { lat: number; lng: number } | null
@@ -13,10 +14,12 @@ interface MapWithBoundingBoxProps {
   }) => void
 }
 
+// This component renders a Leaflet map with a drawable box feature
 export default function MapWithBoundingBox({ onBoundingBoxChange }: MapWithBoundingBoxProps) {
-  const featureGroupRef = useRef<L.FeatureGroup>(null)
-  const [isOnline, setIsOnline] = useState(true)
+  const featureGroupRef = useRef<L.FeatureGroup>(null) // reference to drawn features on the map
+  const [isOnline, setIsOnline] = useState(true) // keep track of online status
 
+  // runs only once when the component mounts
   useEffect(() => {
     // Set initial online status
     setIsOnline(navigator.onLine)
@@ -35,12 +38,14 @@ export default function MapWithBoundingBox({ onBoundingBoxChange }: MapWithBound
       shadowUrl: "/images/marker-shadow.png",
     })
 
+    // Cleanup event listeners on component unmount
     return () => {
       window.removeEventListener("online", handleOnline)
       window.removeEventListener("offline", handleOffline)
     }
   }, [])
 
+  // Extract box coordiantes and call onboundingBoxChange to save coords to props
   const handleCreated = (e: any) => {
     const layer = e.layer
     if (layer instanceof L.Rectangle) {
@@ -55,6 +60,7 @@ export default function MapWithBoundingBox({ onBoundingBoxChange }: MapWithBound
     }
   }
 
+  // Clear the bounding box when deleted
   const handleDeleted = () => {
     onBoundingBoxChange({
       southWest: null,
@@ -62,6 +68,7 @@ export default function MapWithBoundingBox({ onBoundingBoxChange }: MapWithBound
     })
   }
 
+  // Update the bounding box when edited
   const handleEdited = (e: any) => {
     const layers = e.layers
     layers.eachLayer((layer: any) => {
@@ -78,9 +85,10 @@ export default function MapWithBoundingBox({ onBoundingBoxChange }: MapWithBound
     })
   }
 
+  // Render the map with a drawable bounding box feature
   return (
     <MapContainer
-      center={[40.7128, -74.006]} // New York City coordinates
+      center={[40.7128, -74.006]} // New York City coordinates default
       zoom={13}
       style={{ height: "100%", width: "100%" }}
     >
