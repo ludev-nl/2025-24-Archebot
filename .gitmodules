@@ -1,0 +1,3 @@
+[submodule "archebot/src/ublox"]
+	path = archebot/src/ublox
+	url = https://github.com/ludev-nl/ublox.git
