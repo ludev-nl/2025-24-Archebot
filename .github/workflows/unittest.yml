@@ -16,4 +16,8 @@ jobs:
           cache: pip
       - run:  |
           pip install pytest
+          pip install numpy
+          pip install cv2
+          pip install ultralytics
+          pip install flask
           pytest
