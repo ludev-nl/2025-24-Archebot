@@ -5,7 +5,7 @@ import cv2
 model = YOLO(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../include/best.pt"))
 
 # Read YOLO labels position labels and convert to pixel coords.
-def read_boxes(labelname: str, img_width: int, img_height: int) -> None | list[tuple[int, int, int, int]]:
+def read_boxes(labelname: str, img_width: int, img_height: int) -> None | list:
     boxes = []
     try:
         with open(labelname, "r") as f:
@@ -19,7 +19,7 @@ def read_boxes(labelname: str, img_width: int, img_height: int) -> None | list[t
     return boxes
 
 # Calculate IOU score of two bounding boxes (overlap)
-def iou(a: tuple[int, int, int, int], b: tuple[int, int, int, int]) -> float:
+def iou(a: tuple, b: tuple) -> float:
     a_x = max(a[0], b[0])
     a_y = max(a[1], b[1])
     b_x = min(a[2], b[2])
