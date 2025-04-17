@@ -3,6 +3,7 @@
 "use client"
 
 import { useState } from "react"
+import { latLngToTile, calculateTotalTiles } from "@/utils/map-utils"
 
 // Define the area to cache (New York City by default)
 const DEFAULT_BOUNDS = {
@@ -21,34 +22,6 @@ export default function OfflineTileManager() {
   const [cachedTiles, setCachedTiles] = useState(0)
   const [isComplete, setIsComplete] = useState(false)
   const [error, setError] = useState<string | null>(null)
-
-  // Calculate the number of tiles needed for the given bounds and zoom levels
-  const calculateTotalTiles = (bounds: typeof DEFAULT_BOUNDS, minZoom: number, maxZoom: number) => {
-    let total = 0
-
-    for (let zoom = minZoom; zoom <= maxZoom; zoom++) {
-      // Convert lat/lng to tile coordinates
-      const nwTile = latLngToTile(bounds.northEast.lat, bounds.southWest.lng, zoom)
-      const seTile = latLngToTile(bounds.southWest.lat, bounds.northEast.lng, zoom)
-
-      // Calculate number of tiles in this zoom level
-      const tilesX = Math.abs(seTile.x - nwTile.x) + 1
-      const tilesY = Math.abs(seTile.y - nwTile.y) + 1
-      total += tilesX * tilesY
-    }
-
-    return total
-  }
-
-  // Convert latitude and longitude to tile coordinates
-  const latLngToTile = (lat: number, lng: number, zoom: number) => {
-    const n = Math.pow(2, zoom)
-    const x = Math.floor(((lng + 180) / 360) * n)
-    const y = Math.floor(
-      ((1 - Math.log(Math.tan((lat * Math.PI) / 180) + 1 / Math.cos((lat * Math.PI) / 180)) / Math.PI) / 2) * n,
-    )
-    return { x, y }
-  }
 
   // Cache tiles for offline use
   const cacheTiles = async () => {
@@ -141,6 +114,7 @@ export default function OfflineTileManager() {
           onClick={cacheTiles}
           disabled={isCaching}
           className={`button w-full ${isComplete ? "button-outline" : "button-primary"}`}
+          data-testid="cache-tiles-button"
         >
           {isComplete ? (
             <span className="flex items-center justify-center">

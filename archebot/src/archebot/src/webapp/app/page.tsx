@@ -125,8 +125,8 @@ export default function Home() {
                     <div className="bg-muted p-2 rounded-md text-xs overflow-x-auto">
                       <pre>
                         {`ST_MakeBox2D(
-  ST_Point(${boundingBox.southWest.lng.toFixed(6)}, ${boundingBox.southWest.lat.toFixed(6)}), 
-  ST_Point(${boundingBox.northEast.lng.toFixed(6)}, ${boundingBox.northEast.lat.toFixed(6)})
+ST_Point(${boundingBox.southWest.lng.toFixed(6)}, ${boundingBox.southWest.lat.toFixed(6)}), 
+ST_Point(${boundingBox.northEast.lng.toFixed(6)}, ${boundingBox.northEast.lat.toFixed(6)})
 )`}
                       </pre>
                     </div>
