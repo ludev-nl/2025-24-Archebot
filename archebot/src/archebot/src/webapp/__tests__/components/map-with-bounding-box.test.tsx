@@ -1,6 +1,6 @@
 "use client"
 import { render, screen, fireEvent } from "@testing-library/react"
-import MapWithBoundingBox from "@/components/map-with-bounding-box"
+import "@testing-library/jest-dom"
 
 // Mock the Leaflet and react-leaflet dependencies
 jest.mock("leaflet", () => {
@@ -31,6 +31,7 @@ jest.mock("leaflet", () => {
     map: jest.fn().mockImplementation(() => ({
       on: jest.fn(),
       addControl: jest.fn(),
+      addLayer: jest.fn(),
       remove: jest.fn(),
       invalidateSize: jest.fn(),
       eachLayer: jest.fn(),
@@ -111,6 +112,8 @@ Object.defineProperty(navigator, "onLine", {
   get: () => true,
 })
 
+import MapWithBoundingBox from "@/components/map-with-bounding-box"
+
 describe("MapWithBoundingBox", () => {
   const mockOnBoundingBoxChange = jest.fn()
 
@@ -123,24 +126,20 @@ describe("MapWithBoundingBox", () => {
     expect(screen.getByTestId("map-container")).toBeInTheDocument()
   })
 
+  test("renders EditControl", async () => {
+    render(<MapWithBoundingBox onBoundingBoxChange={mockOnBoundingBoxChange} />)
+    
+    expect(await screen.findByTestId("edit-control")).toBeInTheDocument()
+  })
+
   test("calls onBoundingBoxChange when a rectangle is created", async () => {
     render(<MapWithBoundingBox onBoundingBoxChange={mockOnBoundingBoxChange} />)
 
     // Wait for the map to initialize
     await screen.findByTestId("map-container")
 
-    // Simulate the draw:created event
-    const map = require("leaflet").map.mock.results[0].value
-    const createHandler = map.on.mock.calls.find((call: any[]) => call[0] === "draw:created")[1]
-
-    createHandler({
-      layer: {
-        getBounds: () => ({
-          getSouthWest: () => ({ lat: 40.7, lng: -74.05 }),
-          getNorthEast: () => ({ lat: 40.73, lng: -73.97 }),
-        }),
-      },
-    })
+    // Simulate the draw:created event via the mocked EditControl button
+    fireEvent.click(screen.getByTestId("simulate-create"))
 
     expect(mockOnBoundingBoxChange).toHaveBeenCalledWith({
       southWest: { lat: 40.7, lng: -74.05 },
