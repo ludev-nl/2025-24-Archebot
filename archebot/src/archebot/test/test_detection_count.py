@@ -2,7 +2,8 @@ from ultralytics import YOLO
 import os
 import cv2
 
-model = YOLO(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../include/best.pt"))
+cwd = os.path.dirname(os.path.abspath(__file__))
+model = YOLO(os.path.join(cwd, "../include/best.pt"))
 
 # Read YOLO labels position labels and count amount of boxes
 def read_count(labelname: str) -> int:
@@ -32,7 +33,7 @@ def helper_detection_count(imgname: str, labelname: str) -> None:
     assert pred_count == true_count, f"Predicted {pred_count}, but expected {true_count}"
 
 def test_detection_count():
-    helper_detection_count("images/test_detection_0.jpeg", "labels/test_detection_0.txt")
-    helper_detection_count("images/test_detection_1.jpeg", "labels/test_detection_1.txt")
-    helper_detection_count("images/test_detection_2.jpeg", "labels/test_detection_2.txt")
-    helper_detection_count("images/test_detection_3.jpeg", "labels/test_detection_3.txt")
+    helper_detection_count(os.path.join(cwd, "images/test_detection_0.jpeg"), os.path.join(cwd, "labels/test_detection_0.txt"))
+    helper_detection_count(os.path.join(cwd, "images/test_detection_1.jpeg"), os.path.join(cwd, "labels/test_detection_1.txt"))
+    helper_detection_count(os.path.join(cwd, "images/test_detection_2.jpeg"), os.path.join(cwd, "labels/test_detection_2.txt"))
+    helper_detection_count(os.path.join(cwd, "images/test_detection_3.jpeg"), os.path.join(cwd, "labels/test_detection_3.txt"))
