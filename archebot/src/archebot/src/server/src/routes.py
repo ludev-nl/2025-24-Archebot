@@ -167,7 +167,7 @@ def get_gpx_file(filename):
     if not os.path.isfile(file_path) or not filename.endswith(".gpx"):
         return jsonify({"error": "File not found or is invalid"}), 404
     
-    return send_from_directory(ROUTES_DIR, filename)
+    return send_from_directory(ROUTES_DIR, filename), 200
 
 @app.route('/routes/<filename>', methods=['POST'])
 def upload_gpx_file(filename):
