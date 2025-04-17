@@ -5,7 +5,7 @@ import cv2
 model = YOLO(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../include/best.pt"))
 
 # Read YOLO labels position labels and count amount of boxes
-def read_count(labelname: str) -> None | int:
+def read_count(labelname: str) -> int:
     count = 0
     try:
         with open(labelname, "r") as f:
