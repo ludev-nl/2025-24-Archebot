@@ -10,7 +10,7 @@ def read_count(labelname: str) -> None | int:
         with open(labelname, "r") as f:
             for line in f.readlines():
                 count += 1
-    except:
+    except Exception:
         return None
     return count
 
