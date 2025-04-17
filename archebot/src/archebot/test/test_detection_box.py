@@ -2,7 +2,8 @@ from ultralytics import YOLO
 import os
 import cv2
 
-model = YOLO(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../include/best.pt"))
+cwd = os.path.dirname(os.path.abspath(__file__))
+model = YOLO(os.path.join(cwd, "../include/best.pt"))
 
 # Read YOLO labels position labels and convert to pixel coords.
 def read_boxes(labelname: str, img_width: int, img_height: int) -> list:
@@ -61,7 +62,7 @@ def helper_detection_box(imgname: str, labelname: str, iou_threshold=0.5):
             assert max_score >= iou_threshold, "IOU of {max_score} of predicted box is lower than threshold {iou_threshold}"
 
 def test_detection_box():
-    helper_detection_box("images/test_detection_0.jpeg", "labels/test_detection_0.txt")
-    helper_detection_box("images/test_detection_1.jpeg", "labels/test_detection_1.txt")
-    helper_detection_box("images/test_detection_2.jpeg", "labels/test_detection_2.txt")
-    helper_detection_box("images/test_detection_3.jpeg", "labels/test_detection_3.txt")
+    helper_detection_box(os.path.join(cwd, "images/test_detection_0.jpeg"), os.path.join(cwd, "labels/test_detection_0.txt"))
+    helper_detection_box(os.path.join(cwd, "images/test_detection_1.jpeg"), os.path.join(cwd, "labels/test_detection_1.txt"))
+    helper_detection_box(os.path.join(cwd, "images/test_detection_2.jpeg"), os.path.join(cwd, "labels/test_detection_2.txt"))
+    helper_detection_box(os.path.join(cwd, "images/test_detection_3.jpeg"), os.path.join(cwd, "labels/test_detection_3.txt"))
