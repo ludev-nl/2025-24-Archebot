@@ -1,7 +1,8 @@
 from ultralytics import YOLO
+import os
 import cv2
 
-model = YOLO("../include/best.pt")
+model = YOLO(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../include/best.pt"))
 
 # Read YOLO labels position labels and convert to pixel coords.
 def read_boxes(labelname: str, img_width: int, img_height: int) -> None | list[tuple[int, int, int, int]]:
