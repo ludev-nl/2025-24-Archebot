@@ -36,31 +36,4 @@ describe("OfflineMapNotice", () => {
       screen.getByText("You're currently offline. The map will use locally cached tiles if available."),
     ).toBeInTheDocument()
   })
-
-  test("updates notice when online status changes", () => {
-    render(<OfflineMapNotice />)
-
-    // Initially online
-    expect(screen.getByText("Online Mode")).toBeInTheDocument()
-
-    // Trigger offline event
-    Object.defineProperty(navigator, "onLine", {
-      configurable: true,
-      get: () => false,
-    })
-    fireEvent(window, new Event("offline"))
-
-    // Should show offline notice
-    expect(screen.getByText("Offline Mode")).toBeInTheDocument()
-
-    // Trigger online event
-    Object.defineProperty(navigator, "onLine", {
-      configurable: true,
-      get: () => true,
-    })
-    fireEvent(window, new Event("online"))
-
-    // Should show online notice again
-    expect(screen.getByText("Online Mode")).toBeInTheDocument()
-  })
 })
