@@ -15,7 +15,6 @@ def ros_exit() -> None:
 
 
 if "__main__" == __name__:
-    print("lol")
     rospy.init_node("archebot", anonymous=True, log_level=rospy.INFO, disable_signals=False)
     rospy.on_shutdown(ros_exit)
 
