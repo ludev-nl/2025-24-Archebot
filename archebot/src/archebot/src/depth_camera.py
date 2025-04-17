@@ -6,8 +6,8 @@ from sensor_msgs.msg import Image
 
 
 def main(data: Image) -> None:
-    path = os.path.dirname(os.path.abspath(__file__))
     numpdata = cam_to_array(data)
+    path = os.path.dirname(os.path.abspath(__file__))
     path = os.path.join(path,"test.png")
     array_to_image(path, numpdata)
 
