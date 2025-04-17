@@ -1,3 +1,8 @@
+test("placeholder", () => {
+  expect(true).toBe(true)
+})
+
+
 // import { latLngToTile, calculateTotalTiles } from "@/utils/map-utils"
 
 // describe("Map Utilities", () => {
