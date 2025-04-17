@@ -15,4 +15,4 @@ class ShardsSchema(Schema):
     photo = fields.Str(required=False)
     
 class RouteSchema(Schema):
-    file = fields.Raw(type='file', format='binary', required=True)
+    file = fields.Raw(required=True, metadata={'type': 'file', 'format': 'binary'})
