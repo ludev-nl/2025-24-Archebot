@@ -5,9 +5,12 @@ import io
 import sys
 import os
 # Adjust path to find Flask app
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../src/server/src')))  
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../src/server/src')))
 
 from routes import app  # Import Flask app
+
+SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))  
+
 
 @pytest.fixture
 def client():
@@ -128,7 +131,7 @@ def test_get_gpx_file(client):
     
     response = client.get(f'/routes/{filename}')
     
-    if os.path.exists(os.path.join("../archebot/src/server/db/routes", filename)):
+    if os.path.exists(os.path.join(SCRIPT_DIR,"../src/server/db/routes", filename)):
         assert response.status_code == 200
     else:
         assert response.status_code == 404
