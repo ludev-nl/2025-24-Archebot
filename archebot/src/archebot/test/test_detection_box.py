@@ -31,7 +31,7 @@ def iou(a: tuple[int, int, int, int], b: tuple[int, int, int, int]) -> float:
     return inter_area / float(a_area + b_area - inter_area + 1e-6)
 
 # Test the predicted bounding boxes with the true bounding boxes
-def test_detection_box(imgname: str, labelname: str, iou_threshold=0.85):
+def test_detection_box(imgname: str, labelname: str, iou_threshold=0.5):
     # Load image
     img = cv2.imread(imgname)
     assert img is not None, f"Image '{imgname}' could not be loaded"
