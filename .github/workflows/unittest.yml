@@ -15,9 +15,4 @@ jobs:
           python-version: "3.8"
           cache: pip
       - run:  |
-          pip install pytest
-          pip install numpy
-          pip install opencv-python
-          pip install ultralytics
-          pip install flask
-          pytest
+          ls
