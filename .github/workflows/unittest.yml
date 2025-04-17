@@ -16,3 +16,4 @@ jobs:
           cache: pip
       - run:  |
           ls
+          pwd
