@@ -13,7 +13,7 @@ def read_boxes(labelname: str, img_width: int, img_height: int) -> None | list[t
                 px = [int(x * img_width) for x in (x1, x2, x3, x4)]
                 py = [int(y * img_height) for y in (y1, y2, y3, y4)]
                 boxes.append((min(px), min(py), max(px), max(py)))
-    except:
+    except Exception:
         return None
     return boxes
 
