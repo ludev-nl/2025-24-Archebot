@@ -1,105 +1,72 @@
-// import { render, screen, fireEvent, waitFor } from "@testing-library/react"
-// import OfflineTileManager from "@/components/offline-tile-manager"
-// import "@testing-library/jest-dom"
-
-// // Mock the caches API
-// const mockCache = {
-//   add: jest.fn().mockResolvedValue(undefined),
-// }
-
-// const mockCaches = {
-//   open: jest.fn().mockResolvedValue(mockCache),
-// }
-
-// Object.defineProperty(window, "caches", {
-//   value: mockCaches,
-//   writable: true,
+// test("placeholder", () => {
+//   expect(true).toBe(true)
 // })
 
-// describe("OfflineTileManager", () => {
-//   beforeEach(() => {
-//     jest.clearAllMocks()
-//   })
 
-//   test("renders the tile manager", () => {
-//     render(<OfflineTileManager />)
-//     expect(screen.getByText("Offline Map Tiles")).toBeInTheDocument()
-//     expect(screen.getByText(/Cache map tiles for offline use/)).toBeInTheDocument()
-//     expect(screen.getByRole("button", { name: /Cache Map Tiles/i })).toBeInTheDocument()
-//   })
+import { render, screen, fireEvent, waitFor } from "@testing-library/react"
+import OfflineTileManager from "@/components/offline-tile-manager"
+import "@testing-library/jest-dom"
 
-//   test("shows error when caches API is not available", async () => {
-//     // Remove caches API
-//     Object.defineProperty(window, "caches", {
-//       value: undefined,
-//       writable: true,
-//     })
+describe("OfflineTileManager", () => {
+  const mockCache = {
+    add: jest.fn().mockResolvedValue(undefined),
+  }
 
-//     render(<OfflineTileManager />)
+  const mockCaches = {
+    open: jest.fn().mockResolvedValue(mockCache),
+  }
 
-//     // Click the cache button
-//     fireEvent.click(screen.getByRole("button", { name: /Cache Map Tiles/i }))
+  beforeEach(() => {
+    // Mock caches API fresh for each test
+    Object.defineProperty(window, "caches", {
+      value: mockCaches,
+      writable: true,
+    })
 
-//     // Should show error message
-//     await waitFor(() => {
-//       expect(screen.getByText("Cache API is not available in this browser or environment")).toBeInTheDocument()
-//     })
+    jest.clearAllMocks()
+  })
 
-//     // Restore caches API for other tests
-//     Object.defineProperty(window, "caches", {
-//       value: mockCaches,
-//       writable: true,
-//     })
-//   })
+  test("renders the tile manager", () => {
+    render(<OfflineTileManager />)
+    expect(screen.getByText("Offline Map Tiles")).toBeInTheDocument()
+    expect(screen.getByText(/Cache map tiles for offline use/)).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: /Cache Map Tiles/i })).toBeInTheDocument()
+  })
 
-//   test("shows progress when caching tiles", async () => {
-//     render(<OfflineTileManager />)
+  test("shows progress when caching starts", async () => {
+    render(<OfflineTileManager />)
+    fireEvent.click(screen.getByRole("button", { name: /Cache Map Tiles/i }))
 
-//     // Click the cache button
-//     fireEvent.click(screen.getByRole("button", { name: /Cache Map Tiles/i }))
+    await waitFor(() =>
+      expect(screen.getByText(/Caching \d+ of \d+ tiles/)).toBeInTheDocument()
+    )
+  })
 
-//     // Should show progress
-//     await waitFor(() => {
-//       expect(screen.getByText(/Caching 0 of/)).toBeInTheDocument()
-//     })
-//   })
+  test("shows completion message after caching", async () => {
+    render(<OfflineTileManager />)
+    fireEvent.click(screen.getByRole("button", { name: /Cache Map Tiles/i }))
 
-//   test("shows completion message after caching", async () => {
-//     render(<OfflineTileManager />)
+    await waitFor(() => {
+      expect(mockCaches.open).toHaveBeenCalledWith("map-tiles")
+    })
 
-//     // Click the cache button
-//     fireEvent.click(screen.getByRole("button", { name: /Cache Map Tiles/i }))
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: /Tiles Cached/i })).toBeInTheDocument()
+    )
+  })
 
-//     // Wait for caching to complete
-//     await waitFor(() => {
-//       expect(mockCaches.open).toHaveBeenCalledWith("map-tiles")
-//       expect(mockCache.add).toHaveBeenCalled()
-//     })
+  test("handles cache error gracefully", async () => {
+    mockCache.add.mockRejectedValueOnce(new Error("Cache error"))
 
-//     // Should show completion message
-//     await waitFor(() => {
-//       expect(screen.getByRole("button", { name: /Tiles Cached/i })).toBeInTheDocument()
-//     })
-//   })
+    render(<OfflineTileManager />)
+    fireEvent.click(screen.getByRole("button", { name: /Cache Map Tiles/i }))
 
-//   test("handles cache error", async () => {
-//     // Make cache.add reject
-//     mockCache.add.mockRejectedValueOnce(new Error("Cache error"))
+    await waitFor(() => {
+      expect(mockCaches.open).toHaveBeenCalledWith("map-tiles")
+    })
 
-//     render(<OfflineTileManager />)
-
-//     // Click the cache button
-//     fireEvent.click(screen.getByRole("button", { name: /Cache Map Tiles/i }))
-
-//     // Wait for caching to attempt
-//     await waitFor(() => {
-//       expect(mockCaches.open).toHaveBeenCalledWith("map-tiles")
-//       expect(mockCache.add).toHaveBeenCalled()
-//     })
-
-//     // Should continue without error (individual tile errors are caught)
-//     await waitFor(() => {
-//       expect(screen.getByRole("button", { name: /Tiles Cached/i })).toBeInTheDocument()
-//     })
-//   })
-// })
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: /Tiles Cached/i })).toBeInTheDocument()
+    )
+  })
+})

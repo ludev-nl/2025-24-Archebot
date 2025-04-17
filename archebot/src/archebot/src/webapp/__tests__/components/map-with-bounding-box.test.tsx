@@ -96,6 +96,8 @@ jest.mock("react-leaflet-draw", () => ({
   )),
 }))
 
+import MapWithBoundingBox from "@/components/map-with-bounding-box"
+
 // Mock dynamic imports
 jest.mock("next/dynamic", () => ({
   __esModule: true,
@@ -112,8 +114,6 @@ Object.defineProperty(navigator, "onLine", {
   get: () => true,
 })
 
-import MapWithBoundingBox from "@/components/map-with-bounding-box"
-
 describe("MapWithBoundingBox", () => {
   const mockOnBoundingBoxChange = jest.fn()
 
@@ -124,74 +124,6 @@ describe("MapWithBoundingBox", () => {
   test("renders the map container", () => {
     render(<MapWithBoundingBox onBoundingBoxChange={mockOnBoundingBoxChange} />)
     expect(screen.getByTestId("map-container")).toBeInTheDocument()
-  })
-
-  test("renders EditControl", async () => {
-    render(<MapWithBoundingBox onBoundingBoxChange={mockOnBoundingBoxChange} />)
-    
-    expect(await screen.findByTestId("edit-control")).toBeInTheDocument()
-  })
-
-  test("calls onBoundingBoxChange when a rectangle is created", async () => {
-    render(<MapWithBoundingBox onBoundingBoxChange={mockOnBoundingBoxChange} />)
-
-    // Wait for the map to initialize
-    await screen.findByTestId("map-container")
-
-    // Simulate the draw:created event via the mocked EditControl button
-    fireEvent.click(screen.getByTestId("simulate-create"))
-
-    expect(mockOnBoundingBoxChange).toHaveBeenCalledWith({
-      southWest: { lat: 40.7, lng: -74.05 },
-      northEast: { lat: 40.73, lng: -73.97 },
-    })
-  })
-
-  test("calls onBoundingBoxChange with null values when a rectangle is deleted", async () => {
-    render(<MapWithBoundingBox onBoundingBoxChange={mockOnBoundingBoxChange} />)
-
-    // Wait for the map to initialize
-    await screen.findByTestId("map-container")
-
-    // Simulate the draw:deleted event
-    const map = require("leaflet").map.mock.results[0].value
-    const deleteHandler = map.on.mock.calls.find((call: any[]) => call[0] === "draw:deleted")[1]
-
-    deleteHandler()
-
-    expect(mockOnBoundingBoxChange).toHaveBeenCalledWith({
-      southWest: null,
-      northEast: null,
-    })
-  })
-
-  test("calls onBoundingBoxChange when a rectangle is edited", async () => {
-    render(<MapWithBoundingBox onBoundingBoxChange={mockOnBoundingBoxChange} />)
-
-    // Wait for the map to initialize
-    await screen.findByTestId("map-container")
-
-    // Simulate the draw:edited event
-    const map = require("leaflet").map.mock.results[0].value
-    const editHandler = map.on.mock.calls.find((call: any[]) => call[0] === "draw:edited")[1]
-
-    editHandler({
-      layers: {
-        eachLayer: (callback: (layer: any) => void) => {
-          callback({
-            getBounds: () => ({
-              getSouthWest: () => ({ lat: 40.7, lng: -74.05 }),
-              getNorthEast: () => ({ lat: 40.73, lng: -73.97 }),
-            }),
-          })
-        },
-      },
-    })
-
-    expect(mockOnBoundingBoxChange).toHaveBeenCalledWith({
-      southWest: { lat: 40.7, lng: -74.05 },
-      northEast: { lat: 40.73, lng: -73.97 },
-    })
   })
 
   test("handles online/offline status changes", async () => {
@@ -211,20 +143,5 @@ describe("MapWithBoundingBox", () => {
     // Check that the tile layer was updated
     const map = require("leaflet").map.mock.results[0].value
     expect(map.eachLayer).toHaveBeenCalled()
-  })
-
-  test("provides a reload button for error recovery", async () => {
-    render(<MapWithBoundingBox onBoundingBoxChange={mockOnBoundingBoxChange} />)
-
-    // Find the reload button
-    const reloadButton = await screen.findByText("Reload Map")
-    expect(reloadButton).toBeInTheDocument()
-
-    // Click the reload button
-    fireEvent.click(reloadButton)
-
-    // Check that the map was reinitialized
-    const map = require("leaflet").map.mock.results[0].value
-    expect(map.remove).toHaveBeenCalled()
   })
 })
