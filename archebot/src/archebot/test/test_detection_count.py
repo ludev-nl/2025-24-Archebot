@@ -1,7 +1,7 @@
 from ultralytics import YOLO
 import cv2
 
-model = YOLO('best.pt')
+model = YOLO("../include/best.pt")
 
 # Read YOLO labels position labels and count amount of boxes
 def read_count(labelname: str) -> None | int:
