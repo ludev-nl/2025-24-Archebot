@@ -37,6 +37,29 @@ export default function Home() {
     northWest: null,
   })
 
+  // send box coordinates to the server when all corners are set
+  useEffect(() => {
+    const allCornersSet = Box.northEast && Box.southWest && Box.northWest && Box.southEast
+  
+    if (allCornersSet) {
+      fetch("http://localhost:5000/box-coordinates", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(Box),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          console.log("Server response:", data)
+        })
+        .catch((err) => {
+          console.error("Failed to send box coordinates:", err)
+        })
+    }
+  }, [Box])
+  
+
   // State to manage service worker registration status
   const [serviceWorkerStatus, setServiceWorkerStatus] = useState<"loading" | "registered" | "failed">("loading")
 
