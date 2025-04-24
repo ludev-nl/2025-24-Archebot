@@ -1,8 +1,11 @@
+name: unittests
+
 on:
-  workflow_run:
-    workflows: ["Lint with ruff"]  # Name of the other workflow
-    types:
-      - completed  # Wait for completion
+  push:
+    branches:
+      - main
+      - dev
+      - workflows
 
 jobs:
   test:
