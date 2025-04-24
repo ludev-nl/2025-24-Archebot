@@ -19,6 +19,9 @@ jobs:
         with:
           required-ros-distributions: noetic
       - run:  |
-          python --version
-          pip install -r ./archebot/src/archebot/test/requirements.txt
+          python3 --version
+          pip3 --version
+          which python3
+          which pip3
+          pip3 install -r ./archebot/src/archebot/test/requirements.txt
           pytest
