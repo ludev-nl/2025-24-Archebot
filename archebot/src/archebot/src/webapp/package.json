@@ -16,6 +16,8 @@
     "clsx": "^2.1.1",
     "leaflet": "^1.9.4",
     "leaflet-draw": "^1.0.4",
+    "leaflet-draw-rotate": "^0.0.5",
+    "leaflet-path-transform": "^1.9.0",
     "lucide-react": "^0.477.0",
     "next": "15.2.1",
     "next-themes": "^0.4.6",

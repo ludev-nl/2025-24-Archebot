@@ -26,6 +26,12 @@ importers:
       leaflet-draw:
         specifier: ^1.0.4
         version: 1.0.4
+      leaflet-draw-rotate:
+        specifier: ^0.0.5
+        version: 0.0.5(leaflet-draw@1.0.4)(leaflet@1.9.4)
+      leaflet-path-transform:
+        specifier: ^1.9.0
+        version: 1.9.0(leaflet@1.9.4)
       lucide-react:
         specifier: ^0.477.0
         version: 0.477.0(react@18.3.1)
@@ -2254,8 +2260,22 @@ packages:
     resolution: {integrity: sha512-MbjN408fEndfiQXbFQ1vnd+1NoLDsnQW41410oQBXiyXDMYH5z505juWa4KUE1LqxRC7DgOgZDbKLxHIwm27hA==}
     engines: {node: '>=0.10'}
 
+  leaflet-draw-rotate@0.0.5:
+    resolution: {integrity: sha512-6DLbyLLwh0s9rFPAm786t1sY5YHvR2cr6fGI7HJCTFhmGSK8J5gHSb3rVmUFz2Ms7OFk9o/Al9jlCy3hiYX7qg==}
+    peerDependencies:
+      leaflet: ^1.0.0
+      leaflet-draw: ^1.0.4
+
   leaflet-draw@1.0.4:
     resolution: {integrity: sha512-rsQ6saQO5ST5Aj6XRFylr5zvarWgzWnrg46zQ1MEOEIHsppdC/8hnN8qMoFvACsPvTioAuysya/TVtog15tyAQ==}
+
+  leaflet-path-drag@1.9.5:
+    resolution: {integrity: sha512-u2oQzU/IR+XezHwREyB4T3Og5DJXgdyxtmK+GEQyrVLUwLlWaFxa0QMGxlWgE4Ch+rSyUeYOq/x8uLnelC3DnQ==}
+
+  leaflet-path-transform@1.9.0:
+    resolution: {integrity: sha512-QhTwoO4/ycaH5o4b/8OFNpzBXMnTQpWyI6BkkO0IyNrmgHkGMFlW7cQR5E3khrQE1NEFL2/VERD9ettGi/DWnw==}
+    peerDependencies:
+      leaflet: '>=1.8.0 <1.10.0'
 
   leaflet@1.9.4:
     resolution: {integrity: sha512-nxS1ynzJOmOlHp+iL3FyWqK89GtNL8U8rvlMOsQdTTssxZwCXh8N2NB3GDQOL+YR3XnWyZAxwQixURb+FA74PA==}
@@ -5792,7 +5812,19 @@ snapshots:
     dependencies:
       language-subtag-registry: 0.3.23
 
+  leaflet-draw-rotate@0.0.5(leaflet-draw@1.0.4)(leaflet@1.9.4):
+    dependencies:
+      leaflet: 1.9.4
+      leaflet-draw: 1.0.4
+
   leaflet-draw@1.0.4: {}
+
+  leaflet-path-drag@1.9.5: {}
+
+  leaflet-path-transform@1.9.0(leaflet@1.9.4):
+    dependencies:
+      leaflet: 1.9.4
+      leaflet-path-drag: 1.9.5
 
   leaflet@1.9.4: {}
 

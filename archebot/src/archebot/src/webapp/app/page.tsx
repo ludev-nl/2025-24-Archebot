@@ -42,7 +42,7 @@ export default function Home() {
     const allCornersSet = Box.northEast && Box.southWest && Box.northWest && Box.southEast
   
     if (allCornersSet) {
-      fetch("http://localhost:5000/box-coordinates", {
+      fetch("http://localhost:4000/box-coordinates", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -157,17 +157,6 @@ export default function Home() {
                   <h3 className="font-medium mb-1">Northwest Corner:</h3>
                   <p className="text-sm">Latitude: {Box.northWest.lat.toFixed(6)}</p>
                   <p className="text-sm">Longitude: {Box.northWest.lng.toFixed(6)}</p>
-                </div>
-                <div className="md:col-span-4 pt-2 border-t">
-                  <h3 className="font-medium mb-1">For PostGIS Query:</h3>
-                  <div className="bg-muted p-2 rounded-md text-xs overflow-x-auto">
-                    <pre>
-                      {`ST_MakeBox2D(
-                        ST_Point(${Box.southWest.lng.toFixed(6)}, ${Box.southWest.lat.toFixed(6)}), 
-                        ST_Point(${Box.northEast.lng.toFixed(6)}, ${Box.northEast.lat.toFixed(6)})
-                        )`}
-                    </pre>
-                  </div>
                 </div>
               </div>
             ) : (

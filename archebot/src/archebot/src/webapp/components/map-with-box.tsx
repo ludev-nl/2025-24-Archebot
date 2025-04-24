@@ -1,10 +1,10 @@
-"use client"
-
 import { useEffect, useRef, useState } from "react"
 import L from "leaflet"
 import "leaflet/dist/leaflet.css"
 import "leaflet-draw/dist/leaflet.draw.css"
 import "leaflet-draw"
+import "leaflet-path-transform"
+import "leaflet-draw-rotate"
 
 export interface BoxCoordinates {
   southWest: { lat: number; lng: number } | null
@@ -24,6 +24,8 @@ export default function MapWithBox({ onBoxChange }: MapWithBoxProps) {
   const [isOnline, setIsOnline] = useState(true)
   const [mapInitialized, setMapInitialized] = useState(false)
   const [initError, setInitError] = useState<string | null>(null)
+  const currentRectRef = useRef<L.Rectangle | null>(null)
+  const rotateHandleRef = useRef<any>(null)
 
   // Set up online/offline detection
   useEffect(() => {
@@ -41,95 +43,22 @@ export default function MapWithBox({ onBoxChange }: MapWithBoxProps) {
     }
   }, [])
 
-  // Set up Leaflet marker icons
-  useEffect(() => {
-    // Use local marker icons instead of CDN
-
-    L.Icon.Default.mergeOptions({
-      iconRetinaUrl: "/images/marker-icon-2x.png",
-      iconUrl: "/images/marker-icon.png",
-      shadowUrl: "/images/marker-shadow.png",
+  // Function to update coordinates from rectangle
+  const updateCoordinates = (layer: L.Rectangle) => {
+    const latlngs = layer.getLatLngs()[0] as L.LatLng[]
+    onBoxChange({
+      northWest: { lat: latlngs[0].lat, lng: latlngs[0].lng },
+      northEast: { lat: latlngs[1].lat, lng: latlngs[1].lng },
+      southEast: { lat: latlngs[2].lat, lng: latlngs[2].lng },
+      southWest: { lat: latlngs[3].lat, lng: latlngs[3].lng },
     })
-  }, [])
-
-  // Add CSS to fix drawing controls
-  useEffect(() => {
-    // Create a style element
-    const style = document.createElement("style")
-
-    // Add CSS rules to fix drawing controls and position them more to the left
-    style.textContent = `
-      /* Position the draw control on the left side */
-      .leaflet-draw.leaflet-control {
-        position: absolute;
-        left: 10px;
-        top: 80px;
-        z-index: 1000;
-      }
-      
-      /* Fix drawing control text overlap */
-      .leaflet-draw-toolbar {
-        margin-top: 0 !important;
-      }
-      
-      /* Ensure the draw actions menu doesn't get cut off */
-      .leaflet-draw-actions {
-        left: 35px !important;
-        top: 0 !important;
-      }
-      
-      /* Style the action buttons */
-      .leaflet-draw-actions a {
-        display: block !important;
-        padding: 4px 10px !important;
-        background-color: white !important;
-        color: #333 !important;
-        font-size: 12px !important;
-        line-height: 20px !important;
-        text-decoration: none !important;
-        border-bottom: 1px solid #ccc !important;
-      }
-      
-      /* Fix tooltip positioning */
-      .leaflet-draw-tooltip {
-        background: white !important;
-        border: 1px solid #999 !important;
-        border-radius: 4px !important;
-        color: #333 !important;
-        font-size: 12px !important;
-        padding: 4px 8px !important;
-        white-space: nowrap !important;
-        z-index: 1000 !important;
-      }
-      
-      /* Ensure the edit actions don't get cut off */
-      .leaflet-draw-edit-edit .leaflet-draw-actions,
-      .leaflet-draw-edit-remove .leaflet-draw-actions {
-        left: 35px !important;
-        top: 0 !important;
-      }
-      
-      /* Fix for the edit toolbar */
-      .leaflet-draw-toolbar-top {
-        margin-top: 0 !important;
-      }
-    `
-
-    // Add the style element to the document head
-    document.head.appendChild(style)
-
-    // Clean up function to remove the style element when component unmounts
-    return () => {
-      document.head.removeChild(style)
-    }
-  }, [])
+  }
 
   // Initialize the map
   useEffect(() => {
     if (!mapRef.current || leafletMapRef.current) return
 
     try {
-      // Create the map instance
       const map = L.map(mapRef.current, {
         center: [40.7128, -74.006], // New York City coordinates
         zoom: 13,
@@ -137,57 +66,93 @@ export default function MapWithBox({ onBoxChange }: MapWithBoxProps) {
 
       leafletMapRef.current = map
 
-      // Add the tile layer
       L.tileLayer(isOnline ? "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" : "/tiles/{z}/{x}/{y}.png", {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
         errorTileUrl: "/images/error-tile.png",
       }).addTo(map)
 
-      // Create feature group for drawing
       const featureGroup = new L.FeatureGroup()
       featureGroup.addTo(map)
       featureGroupRef.current = featureGroup
 
-      // Initialize the draw control
       const drawControl = new (L.Control as any).Draw({
-        position: "topleft", // Changed from topright to topleft
+        position: "topleft",
         draw: {
           polyline: false,
           polygon: false,
           circle: false,
           circlemarker: false,
           marker: false,
-          rectangle: true,
+          rectangle: {
+            showArea: true,
+            shapeOptions: {
+              transform: true // Enable transformation
+            }
+          },
         },
         edit: {
           featureGroup: featureGroup,
+          edit: {
+            selectedPathOptions: {
+              transform: {
+                rotation: true, // Enable rotation
+                scaling: false  // Disable scaling if not needed
+              }
+            }
+          }
         },
       })
 
       map.addControl(drawControl)
 
-      // Set up event handlers
+      // Handle rectangle creation
       map.on("draw:created", (e: any) => {
         const layer = e.layer
-        featureGroup.addLayer(layer)
+        if (currentRectRef.current) {
+          console.log("Removing previous rectangle")
+          featureGroup.removeLayer(currentRectRef.current)
+          if (rotateHandleRef.current) {
+            map.removeLayer(rotateHandleRef.current)
+          }
+        }
 
         if (layer instanceof L.Rectangle) {
-          const bounds = layer.getBounds()
-          const southWest = bounds.getSouthWest()
-          const northEast = bounds.getNorthEast()
-          const southEast = bounds.getSouthEast()
-          const northWest = bounds.getNorthWest()
+          featureGroup.addLayer(layer)
+          currentRectRef.current = layer;
 
-          onBoxChange({
-            southWest: { lat: southWest.lat, lng: southWest.lng },
-            northEast: { lat: northEast.lat, lng: northEast.lng },
-            southEast: { lat: southEast.lat, lng: southEast.lng },
-            northWest: { lat: northWest.lat, lng: northWest.lng },
+          // Enable transformation with rotation
+          (layer as any).transform.enable({
+            rotation: true,
+            scaling: false,
+          })
+
+          // Add rotate handle
+          rotateHandleRef.current = new (L as any).pathTransform.RotateHandle({
+            path: layer,
+            icon: new L.DivIcon({
+              className: 'leaflet-rotate-handle',
+              iconSize: [16, 16]
+            }),
+            position: 'topright'
+          }).addTo(map)
+
+          // Update coordinates initially
+          updateCoordinates(layer)
+
+          // Listen for transformation events
+          layer.on('transform', () => {
+            updateCoordinates(layer)
           })
         }
       })
 
+      // Handle rectangle deletion
       map.on("draw:deleted", () => {
+        currentRectRef.current = null
+        if (rotateHandleRef.current) {
+          map.removeLayer(rotateHandleRef.current)
+          rotateHandleRef.current = null
+        }
         onBoxChange({
           southWest: null,
           northEast: null,
@@ -196,27 +161,15 @@ export default function MapWithBox({ onBoxChange }: MapWithBoxProps) {
         })
       })
 
+      // Handle editing (including rotation)
       map.on("draw:edited", (e: any) => {
-        const layers = e.layers
-        layers.eachLayer((layer: any) => {
+        e.layers.eachLayer((layer: any) => {
           if (layer instanceof L.Rectangle) {
-            const bounds = layer.getBounds()
-            const southWest = bounds.getSouthWest()
-            const northEast = bounds.getNorthEast()
-            const southEast = bounds.getSouthEast()
-            const northWest = bounds.getNorthWest()
-
-            onBoxChange({
-              southWest: { lat: southWest.lat, lng: southWest.lng },
-              northEast: { lat: northEast.lat, lng: northEast.lng },
-              southEast: { lat: southEast.lat, lng: southEast.lng },
-              northWest: { lat: northWest.lat, lng: northWest.lng },
-            })
+            updateCoordinates(layer)
           }
         })
       })
 
-      // Force a resize after initialization
       setTimeout(() => {
         map.invalidateSize()
         setMapInitialized(true)
@@ -226,7 +179,6 @@ export default function MapWithBox({ onBoxChange }: MapWithBoxProps) {
       setInitError(error instanceof Error ? error.message : "Failed to initialize map")
     }
 
-    // Cleanup function
     return () => {
       if (leafletMapRef.current) {
         leafletMapRef.current.remove()
@@ -236,28 +188,6 @@ export default function MapWithBox({ onBoxChange }: MapWithBoxProps) {
     }
   }, [onBoxChange, isOnline])
 
-  // Handle online/offline status changes
-  useEffect(() => {
-    if (!leafletMapRef.current) return
-
-    // Update tile layer when online status changes
-    const map = leafletMapRef.current
-
-    // Remove existing tile layers
-    map.eachLayer((layer) => {
-      if (layer instanceof L.TileLayer) {
-        map.removeLayer(layer)
-      }
-    })
-
-    // Add new tile layer based on online status
-    L.tileLayer(isOnline ? "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" : "/tiles/{z}/{x}/{y}.png", {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-      errorTileUrl: "/images/error-tile.png",
-    }).addTo(map)
-  }, [isOnline])
-
-  // Function to manually reinitialize the map
   const reinitializeMap = () => {
     if (leafletMapRef.current) {
       leafletMapRef.current.remove()
@@ -268,13 +198,9 @@ export default function MapWithBox({ onBoxChange }: MapWithBoxProps) {
     setInitError(null)
     setMapInitialized(false)
 
-    // Force a re-render to trigger the initialization effect
     setTimeout(() => {
       if (mapRef.current) {
-        // Clear any existing content
         mapRef.current.innerHTML = ""
-
-        // Re-trigger the initialization effect
         setIsOnline(navigator.onLine)
       }
     }, 100)
@@ -282,15 +208,24 @@ export default function MapWithBox({ onBoxChange }: MapWithBoxProps) {
 
   return (
     <div className="map-wrapper" style={{ position: "relative", height: "100%", width: "100%" }}>
-      {/* Map container */}
+      <style>
+      {`
+        .leaflet-rotate-handle {
+          background-color: #fff;
+          border: 2px solid #3388ff;
+          border-radius: 50%;
+          width: 16px;
+          height: 16px;
+          cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"><path fill="%233388ff" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z"/><path fill="%233388ff" d="M12 8l-4 4h3v4h2v-4h3l-4-4z"/></svg>') 8 8, pointer;
+        }
+      `}
+      </style>
       <div
         ref={mapRef}
         className="map-container"
         style={{ height: "100%", width: "100%" }}
         data-testid="map-container"
       />
-
-      {/* Error message */}
       {initError && (
         <div
           className="map-error"
@@ -317,8 +252,6 @@ export default function MapWithBox({ onBoxChange }: MapWithBoxProps) {
           </button>
         </div>
       )}
-
-      {/* Loading indicator */}
       {!mapInitialized && !initError && (
         <div
           style={{
@@ -332,8 +265,6 @@ export default function MapWithBox({ onBoxChange }: MapWithBoxProps) {
           <p>Loading map...</p>
         </div>
       )}
-
-      {/* Reload button */}
       <button
         onClick={reinitializeMap}
         className="map-reload-button"
