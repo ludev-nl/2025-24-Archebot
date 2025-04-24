@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import dynamic from "next/dynamic"
 
 // Import the map component dynamically to avoid SSR issues with Leaflet
-const MapWithBoundingBox = dynamic(() => import("@/components/map-with-bounding-box"), {
+const MapWithBox = dynamic(() => import("@/components/map-with-box"), {
   ssr: false,
   loading: () => (
     <div className="h-[500px] w-full flex items-center justify-center bg-muted">
@@ -24,14 +24,20 @@ const OfflineMapNotice = dynamic(() => import("@/components/offline-map-notice")
 })
 
 export default function Home() {
-  const [boundingBox, setBoundingBox] = useState<{
+  // State to hold the box coordinates
+  const [Box, setBox] = useState<{
     southWest: { lat: number; lng: number } | null
     northEast: { lat: number; lng: number } | null
+    southEast: { lat: number; lng: number } | null
+    northWest: { lat: number; lng: number } | null
   }>({
     southWest: null,
     northEast: null,
+    southEast: null,
+    northWest: null,
   })
 
+  // State to manage service worker registration status
   const [serviceWorkerStatus, setServiceWorkerStatus] = useState<"loading" | "registered" | "failed">("loading")
 
   // Register service worker for offline functionality
@@ -68,9 +74,9 @@ export default function Home() {
 
   return (
     <main className="container mx-auto py-8 px-4">
-      <h1 className="text-3xl font-bold mb-6">Offline Geographic Bounding Box Selector</h1>
+      <h1 className="text-3xl font-bold mb-6">Offline Geographic  Box Selector</h1>
       <p className="mb-4 text-muted-foreground">
-        Draw a rectangle on the map to get the latitude and longitude coordinates of the bounding box.
+        Draw a rectangle on the map to get the latitude and longitude coordinates of the  box.
       </p>
 
       {serviceWorkerStatus === "failed" && (
@@ -83,7 +89,8 @@ export default function Home() {
       )}
 
       <OfflineMapNotice />
-
+      
+      {/* map with box */}
       <div className="grid gap-6 md:grid-cols-3">
         <div className="md:col-span-2">
           <div className="card">
@@ -95,39 +102,52 @@ export default function Home() {
             </div>
             <div className="card-content">
               <div className="h-[500px] w-full rounded-md overflow-hidden border">
-                <MapWithBoundingBox onBoundingBoxChange={setBoundingBox} />
+                <MapWithBox onBoxChange={setBox} />
               </div>
             </div>
           </div>
         </div>
 
+        {/* Box Coordinates */}
         <div className="space-y-6">
           <div className="card">
             <div className="card-header">
-              <h2 className="card-title">Bounding Box Coordinates</h2>
+              <h2 className="card-title"> Box Coordinates</h2>
               <p className="card-description">The coordinates of your selected area will appear here</p>
             </div>
             <div className="card-content">
-              {boundingBox.southWest && boundingBox.northEast ? (
+              {Box.southWest && Box.northEast && Box.southEast && Box.northWest ? (
                 <div className="space-y-4">
                   <div>
                     <h3 className="font-medium mb-1">Southwest Corner:</h3>
-                    <p className="text-sm">Latitude: {boundingBox.southWest.lat.toFixed(6)}</p>
-                    <p className="text-sm">Longitude: {boundingBox.southWest.lng.toFixed(6)}</p>
+                    <p className="text-sm">Latitude: {Box.southWest.lat.toFixed(6)}</p>
+                    <p className="text-sm">Longitude: {Box.southWest.lng.toFixed(6)}</p>
                   </div>
                   <div>
                     <h3 className="font-medium mb-1">Northeast Corner:</h3>
-                    <p className="text-sm">Latitude: {boundingBox.northEast.lat.toFixed(6)}</p>
-                    <p className="text-sm">Longitude: {boundingBox.northEast.lng.toFixed(6)}</p>
+                    <p className="text-sm">Latitude: {Box.northEast.lat.toFixed(6)}</p>
+                    <p className="text-sm">Longitude: {Box.northEast.lng.toFixed(6)}</p>
+                  </div>
+                  <div>
+                    <h3 className="font-medium mb-1">Southeast Corner:</h3>
+                    <p className="text-sm">Latitude: {Box.southEast.lat.toFixed(6)}</p>
+                    <p className="text-sm">Longitude: {Box.southEast.lng.toFixed(6)}</p>
+                  </div>
+                  <div>
+                    <h3 className="font-medium mb-1">Northwest Corner:</h3>
+                    <p className="text-sm">Latitude: {Box.northWest.lat.toFixed(6)}</p>
+                    <p className="text-sm">Longitude: {Box.northWest.lng.toFixed(6)}</p>
                   </div>
                   <div className="pt-2 border-t">
                     <h3 className="font-medium mb-1">For PostGIS Query:</h3>
                     <div className="bg-muted p-2 rounded-md text-xs overflow-x-auto">
                       <pre>
-                        {`ST_MakeBox2D(
-ST_Point(${boundingBox.southWest.lng.toFixed(6)}, ${boundingBox.southWest.lat.toFixed(6)}), 
-ST_Point(${boundingBox.northEast.lng.toFixed(6)}, ${boundingBox.northEast.lat.toFixed(6)})
-)`}
+                        {
+                          `ST_MakeBox2D(
+                          ST_Point(${Box.southWest.lng.toFixed(6)}, ${Box.southWest.lat.toFixed(6)}), 
+                          ST_Point(${Box.northEast.lng.toFixed(6)}, ${Box.northEast.lat.toFixed(6)})
+                          )`
+                        }
                       </pre>
                     </div>
                   </div>
