@@ -1,10 +1,12 @@
 from ultralytics import YOLO
+import os
 import cv2
 
-model = YOLO("../include/best.pt")
+cwd = os.path.dirname(os.path.abspath(__file__))
+model = YOLO(os.path.join(cwd, "../include/best.pt"))
 
 # Read YOLO labels position labels and convert to pixel coords.
-def read_boxes(labelname: str, img_width: int, img_height: int) -> None | list[tuple[int, int, int, int]]:
+def read_boxes(labelname: str, img_width: int, img_height: int) -> list:
     boxes = []
     try:
         with open(labelname, "r") as f:
@@ -13,12 +15,12 @@ def read_boxes(labelname: str, img_width: int, img_height: int) -> None | list[t
                 px = [int(x * img_width) for x in (x1, x2, x3, x4)]
                 py = [int(y * img_height) for y in (y1, y2, y3, y4)]
                 boxes.append((min(px), min(py), max(px), max(py)))
-    except:
+    except Exception:
         return None
     return boxes
 
 # Calculate IOU score of two bounding boxes (overlap)
-def iou(a: tuple[int, int, int, int], b: tuple[int, int, int, int]) -> float:
+def iou(a: tuple, b: tuple) -> float:
     a_x = max(a[0], b[0])
     a_y = max(a[1], b[1])
     b_x = min(a[2], b[2])
@@ -60,7 +62,7 @@ def helper_detection_box(imgname: str, labelname: str, iou_threshold=0.5):
             assert max_score >= iou_threshold, "IOU of {max_score} of predicted box is lower than threshold {iou_threshold}"
 
 def test_detection_box():
-    helper_detection_box("images/test_detection_0.jpeg", "labels/test_detection_0.txt")
-    helper_detection_box("images/test_detection_1.jpeg", "labels/test_detection_1.txt")
-    helper_detection_box("images/test_detection_2.jpeg", "labels/test_detection_2.txt")
-    helper_detection_box("images/test_detection_3.jpeg", "labels/test_detection_3.txt")
+    helper_detection_box(os.path.join(cwd, "images/test_detection_0.jpeg"), os.path.join(cwd, "labels/test_detection_0.txt"))
+    helper_detection_box(os.path.join(cwd, "images/test_detection_1.jpeg"), os.path.join(cwd, "labels/test_detection_1.txt"))
+    helper_detection_box(os.path.join(cwd, "images/test_detection_2.jpeg"), os.path.join(cwd, "labels/test_detection_2.txt"))
+    helper_detection_box(os.path.join(cwd, "images/test_detection_3.jpeg"), os.path.join(cwd, "labels/test_detection_3.txt"))

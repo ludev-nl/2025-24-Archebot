@@ -45,7 +45,7 @@ def get_location_logs():
         logs = conn.execute('SELECT * FROM locationlogs').fetchall()
         conn.close()
         return jsonify([dict(log) for log in logs]), 200
-    except:
+    except Exception:
         return jsonify({"message":"Could not query database"}), 500
 
 
