@@ -14,6 +14,9 @@ jobs:
         with:
           python-version: "3.8"
           cache: pip
+      - uses: ros-tooling/setup-ros@v0.7
+        with:
+          required-ros-distributions: noetic
       - run:  |
           pip install -r ./archebot/src/archebot/test/requirements.txt
           pytest
