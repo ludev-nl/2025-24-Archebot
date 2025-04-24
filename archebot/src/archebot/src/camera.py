@@ -3,7 +3,7 @@ import os
 import ros_numpy
 
 cwd = os.path.dirname(os.path.abspath(__file__))
-model = YOLO(os.path.join(cwd, "../include/best.pt"))
+model = YOLO(os.path.join(cwd, "../include/model.pt"))
 
 def main(data) -> None:
     img = ros_numpy.numpify(data)
