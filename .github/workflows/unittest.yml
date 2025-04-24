@@ -10,13 +10,11 @@ on:
 jobs:
   test:
     name: Run Tests
-    runs-on: ubuntu:noble
+    runs-on: ubuntu-latest
+    container:
+      image: ubuntu:focal
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.8"
-          cache: pip
       - uses: ros-tooling/setup-ros@v0.7
         with:
           required-ros-distributions: noetic
