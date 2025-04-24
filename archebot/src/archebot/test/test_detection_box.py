@@ -3,7 +3,7 @@ import os
 import cv2
 
 cwd = os.path.dirname(os.path.abspath(__file__))
-model = YOLO(os.path.join(cwd, "../include/best.pt"))
+model = YOLO(os.path.join(cwd, "../include/model.pt"))
 
 # Read YOLO labels position labels and convert to pixel coords.
 def read_boxes(labelname: str, img_width: int, img_height: int) -> list:
