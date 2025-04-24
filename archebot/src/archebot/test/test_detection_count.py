@@ -3,7 +3,7 @@ import os
 import cv2
 
 cwd = os.path.dirname(os.path.abspath(__file__))
-model = YOLO(os.path.join(cwd, "../include/best.pt"))
+model = YOLO(os.path.join(cwd, "../include/model.pt"))
 
 # Read YOLO labels position labels and count amount of boxes
 def read_count(labelname: str) -> int:
