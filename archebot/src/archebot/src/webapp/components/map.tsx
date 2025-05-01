@@ -72,9 +72,6 @@ const Map = ({ onBoxChange }: MapProps) => {
         rectangleRef.current = layer
         updateBoxCoordinates(layer)
 
-        // Enable editing
-        layer.pm.enable({ allowRotation: true })
-
         // Update coordinates on any modification
         layer.on("pm:edit pm:rotate pm:drag", () => {
           updateBoxCoordinates(layer)
