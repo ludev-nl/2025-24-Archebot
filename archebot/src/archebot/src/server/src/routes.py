@@ -202,6 +202,19 @@ def receive_box_coordinates():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route('/start', methods=['POST'])
+def start_process():
+    try:
+        data = request.get_json()
+        print("Start event received:", data)
+        
+        return jsonify({"message": "Start event received"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+    
+
+
 
 
   
