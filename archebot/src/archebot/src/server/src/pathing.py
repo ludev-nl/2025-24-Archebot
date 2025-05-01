@@ -2,7 +2,7 @@ import gpxpy.gpx
 import numpy as np
 import geopy.distance
 
-def create_gpx(points, step_size_m=1):
+def create_gpx(points, step_size_m=1, list=False):
     # Creating a new file:
     gpx = gpxpy.gpx.GPX()
     gpx_track = gpxpy.gpx.GPXTrack()
@@ -10,10 +10,13 @@ def create_gpx(points, step_size_m=1):
     gpx_segment = gpxpy.gpx.GPXTrackSegment()
     
     # Generate path
-    gpx_segment = generate_lawnmower_path(points, gpx_segment, step_size_m)
+    list, gpx_segment = generate_lawnmower_path(points, gpx_segment, step_size_m)
     
     # Add path to file
     gpx_track.segments.append(gpx_segment)
+    
+    if list:
+        return gpx.to_xml(), list
     
     # Return file as string
     return gpx.to_xml()
@@ -36,6 +39,8 @@ def angle(point: tuple, centroid: tuple):
 def generate_lawnmower_path(coordinates, gpx_segment, step_size_m):
     if len(coordinates) != 4:
         raise ValueError("Exactly 4 corners required.")
+    
+    list = []
 
     # Sort the corners 
     sorted_points = sort_points(coordinates)
@@ -65,8 +70,14 @@ def generate_lawnmower_path(coordinates, gpx_segment, step_size_m):
         if i % 2 == 0:
             gpx_segment.points.append(gpxpy.gpx.GPXTrackPoint(start[0], start[1]))
             gpx_segment.points.append(gpxpy.gpx.GPXTrackPoint(end[0], end[1]))
+            
+            list.append((start[0], start[1]))
+            list.append((end[0], end[1]))
         else:
             gpx_segment.points.append(gpxpy.gpx.GPXTrackPoint(end[0], end[1]))
             gpx_segment.points.append(gpxpy.gpx.GPXTrackPoint(start[0], start[1]))
+            
+            list.append((end[0], end[1]))
+            list.append((start[0], start[1]))
 
-    return gpx_segment
+    return list, gpx_segment

@@ -3,7 +3,8 @@ from flask_cors import CORS
 import sqlite3
 import os
 import base64
-from datavalidation import LocationLogsSchema, LogsSchema, ShardsSchema, RouteSchema
+from datavalidation import LocationLogsSchema, LogsSchema, ShardsSchema, RouteSchema, BoxCoordinatesSchema
+from pathing import create_gpx
 from marshmallow import ValidationError
 import markdown
 
@@ -193,14 +194,27 @@ def upload_gpx_file(filename):
 
 @app.route('/box-coordinates', methods=['POST'])
 def receive_box_coordinates():
+    schema = BoxCoordinatesSchema()
+    data = request.json
+    
     try:
-        data = request.get_json()
-        print("Received box coordinates:", data)
-
+        validated_data = schema.load(data)
+    except ValidationError as err:
+        return jsonify({"error": err.messages}), 400
+    
+    points = []
+    for key, value in validated_data.items():
+        points.append((value["lat"], value["lng"]))
+    
+    # Also create gpx for future features
+    gpx, list = create_gpx(points, step_size_m=1, list=True)
+    
+    print(SCRIPT_DIR)
+    
+    with open(os.path.join(ROUTES_DIR, "route.gpx"), 'w+') as f:
+        f.write(gpx)
         
-        return jsonify({"message": "Box coordinates received"}), 200
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    return jsonify({"coordinates": list}), 200
 
 @app.route('/start', methods=['POST'])
 def start_process():
@@ -220,4 +234,4 @@ def start_process():
   
 # Start server on port 5000    
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=4000, debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True)
