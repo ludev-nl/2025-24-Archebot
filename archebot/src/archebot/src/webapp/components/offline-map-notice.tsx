@@ -28,7 +28,7 @@ export default function OfflineMapNotice() {
 
   if (isOnline) {
     return (
-      <div className="alert mb-4">
+      <div className="card mb-4 p-4">
         <div className="flex items-center">
           <svg
             xmlns="http://www.w3.org/2000/svg"

@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify, redirect, send_from_directory
+from flask_cors import CORS
 import sqlite3
 import os
 import base64
@@ -7,6 +8,7 @@ from marshmallow import ValidationError
 import markdown
 
 app = Flask(__name__)
+CORS(app)  # enable CORS globally
 
 # Get the directory where the script is located
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
@@ -188,7 +190,34 @@ def upload_gpx_file(filename):
     file_path = os.path.join(ROUTES_DIR, filename)
     file.save(file_path)
     return jsonify({"message": "File uploaded successfully"}), 201
+
+@app.route('/box-coordinates', methods=['POST'])
+def receive_box_coordinates():
+    try:
+        data = request.get_json()
+        print("Received box coordinates:", data)
+
+        
+        return jsonify({"message": "Box coordinates received"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/start', methods=['POST'])
+def start_process():
+    try:
+        data = request.get_json()
+        print("Start event received:", data)
+        
+        return jsonify({"message": "Start event received"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+    
+
+
+
+
   
 # Start server on port 5000    
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=4000, debug=True)
