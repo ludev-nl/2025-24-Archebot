@@ -1,0 +1,19 @@
+on:
+  workflow_run:
+    workflows: ["Lint with ruff"]  # Name of the other workflow
+    types:
+      - completed  # Wait for completion
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.8"
+          cache: pip
+      - run:  |
+          pip install -r ./archebot/src/archebot/test/requirements.txt
+          pytest
