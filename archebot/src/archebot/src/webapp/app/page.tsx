@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import dynamic from "next/dynamic"
 
 // Import the map component dynamically to avoid SSR issues with Leaflet
-const MapWithBox = dynamic(() => import("@/components/map-with-box"), {
+const Map = dynamic(() => import("@/components/map"), {
   ssr: false,
   loading: () => (
     <div className="h-[500px] w-full flex items-center justify-center bg-muted">
@@ -124,7 +124,7 @@ export default function Home() {
           </div>
           <div className="card-content">
             <div className="h-[600px] w-full rounded-md overflow-hidden border">
-              <MapWithBox onBoxChange={setBox} />
+              <Map/>
             </div>
           </div>
         </div>
