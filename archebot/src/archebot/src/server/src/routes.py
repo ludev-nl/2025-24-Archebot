@@ -209,8 +209,6 @@ def receive_box_coordinates():
     # Also create gpx for future features
     gpx, list = create_gpx(points, step_size_m=1, list=True)
     
-    print(SCRIPT_DIR)
-    
     with open(os.path.join(ROUTES_DIR, "route.gpx"), 'w+') as f:
         f.write(gpx)
         
@@ -225,12 +223,6 @@ def start_process():
         return jsonify({"message": "Start event received"}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
-    
-
-
-
-
   
 # Start server on port 5000    
 if __name__ == '__main__':
