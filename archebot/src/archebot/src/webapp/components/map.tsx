@@ -1,54 +1,42 @@
 "use client"
 
-import * as L from "leaflet";
-import { useEffect, useState, useRef } from "react";
-import "@geoman-io/leaflet-geoman-free";
-import "@geoman-io/leaflet-geoman-free/dist/leaflet-geoman.css";
-import 'leaflet/dist/leaflet.css';
+import * as L from "leaflet"
+import { useEffect, useState, useRef } from "react"
+import "leaflet/dist/leaflet.css"
+import "@geoman-io/leaflet-geoman-free"
+import "@geoman-io/leaflet-geoman-free/dist/leaflet-geoman.css"
 
-interface RectangleCorners {
-  topLeft: [number, number]
-  topRight: [number, number]
-  bottomRight: [number, number]
-  bottomLeft: [number, number]
+
+interface MapProps {
+  onBoxChange?: (box: {
+    southWest: { lat: number; lng: number } | null
+    northEast: { lat: number; lng: number } | null
+    southEast: { lat: number; lng: number } | null
+    northWest: { lat: number; lng: number } | null
+  }) => void
 }
 
-const Map = () => {
-  const [corners, setCorners] = useState<RectangleCorners | null>(null)
+const Map = ({ onBoxChange }: MapProps) => {
+  const [box, setBox] = useState<{
+    southWest: { lat: number; lng: number } | null
+    northEast: { lat: number; lng: number } | null
+    southEast: { lat: number; lng: number } | null
+    northWest: { lat: number; lng: number } | null
+  }>({
+    southWest: null,
+    northEast: null,
+    southEast: null,
+    northWest: null,
+  })
+
   const mapRef = useRef<L.Map | null>(null)
   const mapContainerRef = useRef<HTMLDivElement>(null)
-  const [mapReady, setMapReady] = useState(false)
+  const rectangleRef = useRef<L.Rectangle | null>(null)
 
-  // Insert the style once
-  useEffect(() => {
-    const styleElement = document.createElement("style")
-    styleElement.innerHTML = `
-      .corner-coordinates {
-        position: absolute;
-        bottom: 20px;
-        left: 20px;
-        z-index: 1000;
-        background: white;
-        padding: 10px;
-        border-radius: 5px;
-        box-shadow: 0 0 10px rgba(0,0,0,0.2);
-        max-width: 300px;
-      }
-    `
-    document.head.appendChild(styleElement)
-
-
-    // cleanup in case component unmounts (good practice)
-    return () => {
-      document.head.removeChild(styleElement)
-    }
-  }, [])
-
-  // Handle map initialization
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return
 
-    // Create map instance manually instead of using MapContainer
+    // Initialize the map
     mapRef.current = L.map(mapContainerRef.current).setView([51.505, -0.09], 13)
 
     // Add tile layer
@@ -72,67 +60,74 @@ const Map = () => {
       removalMode: true,
     })
 
-    let currentRectangle: L.Rectangle | null = null
-
-    const updateCorners = (layer: L.Rectangle) => {
-      const bounds = layer.getBounds()
-      const corners: RectangleCorners = {
-        topLeft: [bounds.getNorthWest().lat, bounds.getNorthWest().lng],
-        topRight: [bounds.getNorthEast().lat, bounds.getNorthEast().lng],
-        bottomRight: [bounds.getSouthEast().lat, bounds.getSouthEast().lng],
-        bottomLeft: [bounds.getSouthWest().lat, bounds.getSouthWest().lng],
-      }
-      setCorners(corners)
-    }
-
+    // Handle rectangle creation and updates
     mapRef.current.on("pm:create", (e) => {
       if (e.shape === "Rectangle") {
-        if (currentRectangle) {
-          mapRef.current?.removeLayer(currentRectangle)
+        // Remove previous rectangle if exists
+        if (rectangleRef.current) {
+          mapRef.current?.removeLayer(rectangleRef.current)
         }
 
         const layer = e.layer as L.Rectangle
-        currentRectangle = layer
-        updateCorners(layer)
+        rectangleRef.current = layer
+        updateBoxCoordinates(layer)
 
+        // Enable editing
         layer.pm.enable({ allowRotation: true })
 
+        // Update coordinates on any modification
         layer.on("pm:edit pm:rotate pm:drag", () => {
-          updateCorners(layer)
+          updateBoxCoordinates(layer)
+        })
+
+        // Handle rectangle removal
+        layer.on("pm:remove", () => {
+          rectangleRef.current = null
+          setBox({
+            southWest: null,
+            northEast: null,
+            southEast: null,
+            northWest: null,
+          })
+          if (onBoxChange) onBoxChange({
+            southWest: null,
+            northEast: null,
+            southEast: null,
+            northWest: null,
+          })
         })
       }
     })
 
-    setMapReady(true)
-
-    // Clean up on unmount
     return () => {
       if (mapRef.current) {
         mapRef.current.remove()
         mapRef.current = null
       }
     }
-  }, [])
+  }, [onBoxChange])
+
+  const updateBoxCoordinates = (layer: L.Rectangle) => {
+    const bounds = layer.getBounds()
+    const newBox = {
+      southWest: { lat: bounds.getSouthWest().lat, lng: bounds.getSouthWest().lng },
+      northEast: { lat: bounds.getNorthEast().lat, lng: bounds.getNorthEast().lng },
+      southEast: { lat: bounds.getSouthEast().lat, lng: bounds.getSouthEast().lng },
+      northWest: { lat: bounds.getNorthWest().lat, lng: bounds.getNorthWest().lng },
+    }
+    setBox(newBox)
+    if (onBoxChange) onBoxChange(newBox)
+  }
 
   return (
     <div style={{ height: "100vh", width: "100%", position: "relative" }}>
       <div ref={mapContainerRef} style={{ height: "100%", width: "100%" }} />
 
       <div className="corner-coordinates">
-        {corners ? (
-          <>
-            <h3>Rectangle Coordinates</h3>
-            <p>Top Left: {corners.topLeft.join(", ")}</p>
-            <p>Top Right: {corners.topRight.join(", ")}</p>
-            <p>Bottom Right: {corners.bottomRight.join(", ")}</p>
-            <p>Bottom Left: {corners.bottomLeft.join(", ")}</p>
-          </>
-        ) : (
-          <p>Draw a rectangle on the map</p>
-        )}
+        <p>Draw a rectangle on the map</p>
       </div>
     </div>
   )
 }
 
-export default Map;
+export default Map

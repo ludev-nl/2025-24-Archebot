@@ -124,7 +124,7 @@ export default function Home() {
           </div>
           <div className="card-content">
             <div className="h-[600px] w-full rounded-md overflow-hidden border">
-              <Map/>
+              <Map onBoxChange={setBox}/>
             </div>
           </div>
         </div>
