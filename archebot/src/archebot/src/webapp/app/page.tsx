@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react"
 import dynamic from "next/dynamic"
+import { Button } from "@/components/ui/button"
+
 
 // Import the map component dynamically to avoid SSR issues with Leaflet
 const Map = dynamic(() => import("@/components/map"), {
@@ -58,6 +60,31 @@ export default function Home() {
         })
     }
   }, [Box])
+
+  // Send a start event to the server when the button is clicked
+  const handleStart = () => {
+    const allCornersSet = Box.northEast && Box.southWest && Box.northWest && Box.southEast
+  
+    if (!allCornersSet) {
+      alert("Please draw a box on the map first.")
+      return
+    }
+  
+    fetch("http://localhost:4000/start", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ message: "start_clicked", box: Box }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        console.log("Start response:", data)
+      })
+      .catch((err) => {
+        console.error("Failed to send start event:", err)
+      })
+  }
   
 
   // State to manage service worker registration status
@@ -97,9 +124,9 @@ export default function Home() {
 
   return (
     <main className="container mx-auto py-8 px-4">
-      <h1 className="text-3xl font-bold mb-6"> Geographic </h1>
+      <h1 className="text-3xl font-bold mb-6"> Geographic map</h1>
       <p className="mb-4 text-muted-foreground">
-        Draw a rectangle on the map to get the latitude and longitude coordinates of the box.
+        Draw a rectangle on the map to get the latitude and longitude coordinates of the box and start the robot.
       </p>
 
       {serviceWorkerStatus === "failed" && (
@@ -119,7 +146,7 @@ export default function Home() {
           <div className="card-header">
             <h2 className="card-title">Interactive Map</h2>
             <p className="card-description">
-              Click the rectangle icon in the top right of the map, then draw a box by clicking and dragging.
+              Click the rectangle icon in the top left of the map, then draw a box by clicking and dragging.
             </p>
           </div>
           <div className="card-content">
@@ -133,11 +160,17 @@ export default function Home() {
         <div className="card">
           <div className="card-header">
             <h2 className="card-title">Box Coordinates</h2>
-            <p className="card-description">The coordinates of your selected area will appear here</p>
+            <p className="card-description">
+              The coordinates of your selected area will appear here, 
+              you can start the robot by clicking the start button
+            </p>
           </div>
           <div className="card-content">
             {Box.southWest && Box.northEast && Box.southEast && Box.northWest ? (
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="text-left mt-6">
+                  <Button variant="outline" onClick={handleStart}>Start</Button>
+                </div>
                 <div>
                   <h3 className="font-medium mb-1">Southwest Corner:</h3>
                   <p className="text-sm">Latitude: {Box.southWest.lat.toFixed(6)}</p>

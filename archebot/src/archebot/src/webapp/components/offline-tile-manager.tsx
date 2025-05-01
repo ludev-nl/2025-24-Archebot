@@ -3,7 +3,7 @@
 "use client"
 
 import { useState } from "react"
-import { latLngToTile, calculateTotalTiles } from "@/utils/map-utils"
+import { latLngToTile, calculateTotalTiles } from "@/lib/map-utils"
 
 // Define the area to cache (New York City by default)
 const DEFAULT_BOUNDS = {
