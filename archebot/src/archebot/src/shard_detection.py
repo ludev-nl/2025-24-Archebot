@@ -3,6 +3,7 @@ from ultralytics import YOLO
 import os
 import ros_numpy
 import sqlite3
+import cv2
 
 
 cwd = os.path.dirname(os.path.abspath(__file__))
@@ -35,8 +36,11 @@ def save_location(data) -> None:
         pass
     # shard_image.save(f"archebot/{data.longitude},{data.latitude}.jpg")
     # database entry
+    
+    _, buffer = cv2.imencode('.png', shard_image)
+    shard_image = buffer.tobytes()
     conn = get_db_connection()
-    conn.execute('INSERT INTO shards (latitude, longitude, photo) VALUES (?, ?, ?)', (data.latitude, data.longitude, sqlite3.Binary(shard_image)))
+    conn.execute('INSERT INTO shards (latitude, longitude, photo) VALUES (?, ?, ?)', (data.latitude, data.longitude, shard_image))
     conn.commit()
     conn.close()
     print("database")
