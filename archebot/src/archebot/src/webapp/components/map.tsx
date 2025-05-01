@@ -73,7 +73,7 @@ const Map = ({ onBoxChange }: MapProps) => {
         updateBoxCoordinates(layer)
 
         // Update coordinates on any modification
-        layer.on("pm:edit pm:rotate pm:drag", () => {
+        layer.on("pm:editend pm:rotateend pm:dragend", () => {
           updateBoxCoordinates(layer)
         })
 

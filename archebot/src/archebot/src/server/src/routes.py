@@ -202,6 +202,8 @@ def receive_box_coordinates():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+
+
   
 # Start server on port 5000    
 if __name__ == '__main__':
