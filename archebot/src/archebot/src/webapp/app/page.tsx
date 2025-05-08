@@ -28,10 +28,10 @@ const OfflineMapNotice = dynamic(() => import("@/components/offline-map-notice")
 export default function Home() {
   // State to hold the box coordinates
   const [Box, setBox] = useState<{
-    southWest: { lat: number; lng: number } | null
-    northEast: { lat: number; lng: number } | null
-    southEast: { lat: number; lng: number } | null
-    northWest: { lat: number; lng: number } | null
+    southWest: L.LatLng | null;
+    northEast: L.LatLng | null;
+    southEast: L.LatLng | null;
+    northWest: L.LatLng | null;
   }>({
     southWest: null,
     northEast: null,
@@ -45,7 +45,7 @@ export default function Home() {
   // send box coordinates to the server when all corners are set and receive path planning coordinates
   useEffect(() => {
     const allCornersSet = Box.northEast && Box.southWest && Box.northWest && Box.southEast
-  
+    console.log("Box coordinates:", Box)
     if (allCornersSet) {
       fetch("http://localhost:4000/box-coordinates", {
         method: "POST",

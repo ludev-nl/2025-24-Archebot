@@ -6,10 +6,10 @@ import "@geoman-io/leaflet-geoman-free/dist/leaflet-geoman.css";
 
 interface MapProps {
   onBoxChange: (box: {
-    southWest: { lat: number; lng: number } | null;
-    northEast: { lat: number; lng: number } | null;
-    southEast: { lat: number; lng: number } | null;
-    northWest: { lat: number; lng: number } | null;
+    southWest: L.LatLng | null;
+    northEast: L.LatLng | null;
+    southEast: L.LatLng | null;
+    northWest: L.LatLng | null;
   }) => void;
   path?: L.LatLngExpression[];
 }
@@ -73,39 +73,8 @@ const Map = ({ onBoxChange, path }: MapProps) => {
         rectangleRef.current = layer;
         updateBoxCoordinates(layer);
 
-        layer.on("pm:editend pm:dragend", () => {
+        layer.on("pm:editend pm:rotateend pm:dragend", () => {
           updateBoxCoordinates(layer);
-        });
-
-        layer.on("pm:rotateend", () => {
-          const center = layer.pm.getRotationCenter();
-          const angle = layer.pm.getAngle();
-
-          const rotateCorner = (corner: { lat: number; lng: number } | null): L.LatLng | null => {
-            if (!corner) return null;
-          
-            const dx = corner.lat - center.lat;
-            const dy = corner.lng - center.lng;
-          
-            const rotatedLat = Math.cos(angle) * dx - Math.sin(angle) * dy + center.lat;
-            const rotatedLng = Math.sin(angle) * dx + Math.cos(angle) * dy + center.lng;
-          
-            return L.latLng(rotatedLat, rotatedLng);
-          };
-          
-
-          const currentBox = boxRef.current;
-          console.log("Current Box:", currentBox);
-          const rotatedBox = {
-            northWest: currentBox.northWest ? rotateCorner(currentBox.northWest) : null,
-            southWest: currentBox.southWest ? rotateCorner(currentBox.southWest) : null,
-            southEast: currentBox.southEast ? rotateCorner(currentBox.southEast) : null,
-            northEast: currentBox.northEast ? rotateCorner(currentBox.northEast) : null,
-          };
-          
-          console.log("Rotated Box:", rotatedBox);
-          setBox(rotatedBox);
-          onBoxChange(rotatedBox);
         });
 
         layer.on("pm:rotate", () => {
@@ -173,13 +142,16 @@ const Map = ({ onBoxChange, path }: MapProps) => {
   }, [path]);
 
   const updateBoxCoordinates = (layer: L.Rectangle) => {
-    const bounds = layer.getBounds();
+    const corners = layer.getLatLngs() as L.LatLng[][];
+    
+    console.log("Corners:", corners);
     const newBox = {
-      southWest: bounds.getSouthWest(),
-      northEast: bounds.getNorthEast(),
-      southEast: bounds.getSouthEast(),
-      northWest: bounds.getNorthWest(),
+      northWest: corners[0][0], // Access the first element in the array for NW
+      southWest: corners[0][1], // Access the first element in the array for SW
+      southEast: corners[0][2], // Access the first element in the array for SE
+      northEast: corners[0][3], // Access the first element in the array for NE
     };
+
     setBox(newBox);
     onBoxChange(newBox);
   };
