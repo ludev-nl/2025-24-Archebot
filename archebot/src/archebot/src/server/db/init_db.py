@@ -38,7 +38,7 @@ def initialize_db():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             latitude FLOAT NOT NULL,
             longitude FLOAT NOT NULL,
-            photo BLOB
+            photo VARCHAR(256)
         )
     ''')
 

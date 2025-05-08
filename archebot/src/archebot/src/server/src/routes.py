@@ -3,7 +3,7 @@ from flask_cors import CORS
 import sqlite3
 import os
 import base64
-from datavalidation import LocationLogsSchema, LogsSchema, ShardsSchema, RouteSchema, BoxCoordinatesSchema
+from datavalidation import LocationLogsSchema, LogsSchema, RouteSchema, BoxCoordinatesSchema
 from pathing import create_gpx
 from marshmallow import ValidationError
 import markdown
@@ -112,42 +112,7 @@ def get_shards():
         shards = conn.execute('SELECT id, latitude, longitude, photo FROM shards').fetchall()
         conn.close()
         
-        # Convert the photo BLOB to a base64 string for each shard
-        result = []
-        for shard in shards:
-            # Create a dictionary to avoid modifying the sqlite3.Row directly
-            shard_dict = dict(shard)
-            if shard_dict['photo']:
-                shard_dict['photo'] = base64.b64encode(shard_dict['photo']).decode('utf-8')
-            result.append(shard_dict)
-        
-        return jsonify(result), 200
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-@app.route('/shards', methods=['POST'])
-def add_shard():
-    data = request.json
-    
-    schema = ShardsSchema()
-    
-    try:
-        validated_data = schema.load(data)  # This will raise an exception if validation fails
-    except ValidationError as err:
-        return jsonify({"error": err.messages}), 400
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-    
-    try:
-        # Convert base64 to image data
-        image_data = base64.b64decode(validated_data['photo'])
-        
-        conn = get_db_connection()
-        conn.execute('INSERT INTO shards (latitude, longitude, photo) VALUES (?, ?, ?)',
-                    (validated_data['latitude'], validated_data['longitude'], image_data))
-        conn.commit()
-        conn.close()
-        return jsonify({"message": "Shard added"}), 201
+        return jsonify([dict(shards) for s in shards]), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     
