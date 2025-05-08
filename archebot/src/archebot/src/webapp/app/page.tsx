@@ -57,9 +57,10 @@ export default function Home() {
         .then((res) => res.json())
         .then((data) => {
           console.log("Server response:", data)
-          setPath(data) // returned path planning coordinates
+          setPath(data.coordinates) // returned path planning coordinates
         })
         .catch((err) => {
+          console.log(JSON.stringify(Box))
           console.error("Failed to send box coordinates:", err)
         })
     }

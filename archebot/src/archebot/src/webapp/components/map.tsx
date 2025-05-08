@@ -37,7 +37,7 @@ const Map = ({ onBoxChange, path }: MapProps) => {
     if (!mapContainerRef.current || mapRef.current) return;
 
     // Initialize the map only once
-    mapRef.current = L.map(mapContainerRef.current).setView([51.505, -0.09], 13);
+    mapRef.current = L.map(mapContainerRef.current).setView([51.505, -0.09], 16);
 
     // Add tile layer
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -131,16 +131,20 @@ const Map = ({ onBoxChange, path }: MapProps) => {
       }).addTo(mapRef.current);
 
       pathLineRef.current = polyline;
+      console.log("path", path);
 
       // Fit the map view to show both the rectangle and the path
       const layers: L.Layer[] = [];
-      if (rectangleRef.current) layers.push(rectangleRef.current);
-      if (polyline) layers.push(polyline);
-
-      if (layers.length > 0) {
-        const group = L.featureGroup(layers);
-        mapRef.current.fitBounds(group.getBounds());
+      if (rectangleRef.current) {
+        layers.push(rectangleRef.current);
+        console.log("Rectangle pushed")
       }
+
+      if (polyline) {
+        layers.push(polyline);
+        console.log("Polyline pushed", polyline)
+      }
+
     } catch (error) {
       console.error("Error creating polyline:", error);
     }
