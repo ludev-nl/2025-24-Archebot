@@ -39,7 +39,10 @@ export default function Home() {
     northWest: null,
   })
 
-  // send box coordinates to the server when all corners are set
+  const [path, setPath] = useState([]);
+
+
+  // send box coordinates to the server when all corners are set and receive path planning coordinates
   useEffect(() => {
     const allCornersSet = Box.northEast && Box.southWest && Box.northWest && Box.southEast
   
@@ -54,8 +57,10 @@ export default function Home() {
         .then((res) => res.json())
         .then((data) => {
           console.log("Server response:", data)
+          setPath(data.coordinates) // returned path planning coordinates
         })
         .catch((err) => {
+          console.log(JSON.stringify(Box))
           console.error("Failed to send box coordinates:", err)
         })
     }
@@ -75,7 +80,7 @@ export default function Home() {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ message: "start_clicked", box: Box }),
+      body: JSON.stringify({message: "start_clicked"}),
     })
       .then((res) => res.json())
       .then((data) => {
@@ -151,7 +156,7 @@ export default function Home() {
           </div>
           <div className="card-content">
             <div className="h-[600px] w-full rounded-md overflow-hidden border">
-              <Map onBoxChange={setBox}/>
+              <Map onBoxChange={setBox} path={path}/>
             </div>
           </div>
         </div>
