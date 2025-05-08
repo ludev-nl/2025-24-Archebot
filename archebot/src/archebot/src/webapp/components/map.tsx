@@ -5,47 +5,49 @@ import "@geoman-io/leaflet-geoman-free";
 import "@geoman-io/leaflet-geoman-free/dist/leaflet-geoman.css";
 
 interface MapProps {
-  onBoxChange?: (box: {
+  onBoxChange: (box: {
     southWest: { lat: number; lng: number } | null;
     northEast: { lat: number; lng: number } | null;
     southEast: { lat: number; lng: number } | null;
     northWest: { lat: number; lng: number } | null;
   }) => void;
-  path?: L.LatLngExpression[]; // Use Leaflet's LatLngExpression type
+  path?: L.LatLngExpression[];
 }
 
 const Map = ({ onBoxChange, path }: MapProps) => {
   const [box, setBox] = useState<{
-    southWest: { lat: number; lng: number } | null;
-    northEast: { lat: number; lng: number } | null;
-    southEast: { lat: number; lng: number } | null;
-    northWest: { lat: number; lng: number } | null;
+    southWest: L.LatLng | null;
+    northEast: L.LatLng | null;
+    southEast: L.LatLng | null;
+    northWest: L.LatLng | null;
   }>({
     southWest: null,
     northEast: null,
     southEast: null,
     northWest: null,
   });
+  
+
+  const boxRef = useRef(box); // ← store current box
+  useEffect(() => {
+    boxRef.current = box; // ← keep ref in sync
+  }, [box]);
 
   const mapRef = useRef<L.Map | null>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const rectangleRef = useRef<L.Rectangle | null>(null);
   const pathLineRef = useRef<L.Polyline | null>(null);
 
-  // Initialize the map
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
 
-    // Initialize the map only once
     mapRef.current = L.map(mapContainerRef.current).setView([51.505, -0.09], 16);
 
-    // Add tile layer
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       attribution:
         '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     }).addTo(mapRef.current);
 
-    // Initialize Geoman controls
     mapRef.current.pm.addControls({
       position: "topleft",
       drawMarker: false,
@@ -61,10 +63,8 @@ const Map = ({ onBoxChange, path }: MapProps) => {
       removalMode: true,
     });
 
-    // Handle rectangle creation and updates
     mapRef.current.on("pm:create", (e) => {
       if (e.shape === "Rectangle") {
-        // Remove previous rectangle if exists
         if (rectangleRef.current) {
           mapRef.current?.removeLayer(rectangleRef.current);
         }
@@ -73,27 +73,63 @@ const Map = ({ onBoxChange, path }: MapProps) => {
         rectangleRef.current = layer;
         updateBoxCoordinates(layer);
 
-        // Update coordinates on any modification
-        layer.on("pm:editend pm:rotateend pm:dragend", () => {
+        layer.on("pm:editend pm:dragend", () => {
           updateBoxCoordinates(layer);
         });
 
-        // Handle rectangle removal
+        layer.on("pm:rotateend", () => {
+          const center = layer.pm.getRotationCenter();
+          const angle = layer.pm.getAngle();
+
+          const rotateCorner = (corner: { lat: number; lng: number } | null): L.LatLng | null => {
+            if (!corner) return null;
+          
+            const dx = corner.lat - center.lat;
+            const dy = corner.lng - center.lng;
+          
+            const rotatedLat = Math.cos(angle) * dx - Math.sin(angle) * dy + center.lat;
+            const rotatedLng = Math.sin(angle) * dx + Math.cos(angle) * dy + center.lng;
+          
+            return L.latLng(rotatedLat, rotatedLng);
+          };
+          
+
+          const currentBox = boxRef.current;
+          console.log("Current Box:", currentBox);
+          const rotatedBox = {
+            northWest: currentBox.northWest ? rotateCorner(currentBox.northWest) : null,
+            southWest: currentBox.southWest ? rotateCorner(currentBox.southWest) : null,
+            southEast: currentBox.southEast ? rotateCorner(currentBox.southEast) : null,
+            northEast: currentBox.northEast ? rotateCorner(currentBox.northEast) : null,
+          };
+          
+          console.log("Rotated Box:", rotatedBox);
+          setBox(rotatedBox);
+          onBoxChange(rotatedBox);
+        });
+
+        layer.on("pm:rotate", () => {
+          const rotationCenter = layer.pm.getRotationCenter();
+          const angle = layer.pm.getAngle();
+          pathLineRef.current?.pm.setRotationCenter(rotationCenter);
+          pathLineRef.current?.pm.rotateLayerToAngle(angle);
+        });
+
         layer.on("pm:remove", () => {
           rectangleRef.current = null;
-          setBox({
+          const emptyBox = {
             southWest: null,
             northEast: null,
             southEast: null,
             northWest: null,
-          });
-          if (onBoxChange)
-            onBoxChange({
-              southWest: null,
-              northEast: null,
-              southEast: null,
-              northWest: null,
-            });
+          };
+          setBox(emptyBox);
+          onBoxChange(emptyBox);
+
+          if (pathLineRef.current) {
+            mapRef.current?.removeLayer(pathLineRef.current);
+            pathLineRef.current = null;
+          }
         });
       }
     });
@@ -106,24 +142,17 @@ const Map = ({ onBoxChange, path }: MapProps) => {
     };
   }, [onBoxChange]);
 
-  // Update the path polyline whenever the path changes
   useEffect(() => {
     if (!mapRef.current) return;
 
-    // If there's already a polyline on the map, remove it
     if (pathLineRef.current) {
       mapRef.current.removeLayer(pathLineRef.current);
       pathLineRef.current = null;
     }
 
-    // If no path or empty path, just return
-    if (!path || path.length === 0) {
-      console.log("No path to display");
-      return;
-    }
+    if (!path || path.length === 0) return;
 
     try {
-      // Create a new polyline with the new path
       const polyline = L.polyline(path, {
         color: "red",
         weight: 4,
@@ -131,36 +160,28 @@ const Map = ({ onBoxChange, path }: MapProps) => {
       }).addTo(mapRef.current);
 
       pathLineRef.current = polyline;
-      console.log("path", path);
-
-      // Fit the map view to show both the rectangle and the path
-      const layers: L.Layer[] = [];
-      if (rectangleRef.current) {
-        layers.push(rectangleRef.current);
-        console.log("Rectangle pushed")
-      }
-
-      if (polyline) {
-        layers.push(polyline);
-        console.log("Polyline pushed", polyline)
-      }
+      polyline.pm.setOptions({
+        draggable: false,
+        allowRotation: false,
+        allowEditing: false,
+      });
+      polyline.pm.disable();
 
     } catch (error) {
       console.error("Error creating polyline:", error);
     }
   }, [path]);
 
-  // Function to update box coordinates
   const updateBoxCoordinates = (layer: L.Rectangle) => {
     const bounds = layer.getBounds();
     const newBox = {
-      southWest: { lat: bounds.getSouthWest().lat, lng: bounds.getSouthWest().lng },
-      northEast: { lat: bounds.getNorthEast().lat, lng: bounds.getNorthEast().lng },
-      southEast: { lat: bounds.getSouthEast().lat, lng: bounds.getSouthEast().lng },
-      northWest: { lat: bounds.getNorthWest().lat, lng: bounds.getNorthWest().lng },
+      southWest: bounds.getSouthWest(),
+      northEast: bounds.getNorthEast(),
+      southEast: bounds.getSouthEast(),
+      northWest: bounds.getNorthWest(),
     };
     setBox(newBox);
-    if (onBoxChange) onBoxChange(newBox);
+    onBoxChange(newBox);
   };
 
   return (
