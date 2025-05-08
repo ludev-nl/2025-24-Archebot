@@ -3,7 +3,6 @@ from ultralytics import YOLO
 import os
 import ros_numpy
 import sqlite3
-import cv2
 
 
 cwd = os.path.dirname(os.path.abspath(__file__))
@@ -30,21 +29,23 @@ def save_location(data) -> None:
     global shard_image, result_count
     if shard_image is None:
         return
-    try:
-        os.mkdir("archebot")
-    except Exception:
-        pass
-    # shard_image.save(f"archebot/{data.longitude},{data.latitude}.jpg")
-    # database entry
     
-    _, buffer = cv2.imencode('.png', shard_image)
-    shard_image = buffer.tobytes()
+    base_filename = f"{data.longitude},{data.latitude}.jpg"
+    image_path_relative = f"server/src/static/{base_filename}"
+    index = 1
+    # Add _n for images with the same location/no location
+    while os.path.exists(cwd + "/" + image_path_relative):
+        image_path_relative = f"server/src/static/{data.longitude},{data.latitude}_{index}.jpg"
+        index += 1
+    
+    full_path = cwd + "/" + image_path_relative
+    shard_image.save(full_path)
+    
+    # database entry
     conn = get_db_connection()
-    conn.execute('INSERT INTO shards (latitude, longitude, photo) VALUES (?, ?, ?)', (data.latitude, data.longitude, shard_image))
+    conn.execute('INSERT INTO shards (latitude, longitude, photo) VALUES (?, ?, ?)', (data.latitude, data.longitude, full_path))
     conn.commit()
     conn.close()
-    print("database")
-    shard_image = None
 
 def shard_detection(data) -> None:
     global camera_iter
@@ -71,6 +72,6 @@ def shard_detection(data) -> None:
                     pass
                 result_count += 1
             if 0 != len(result.boxes):
-                # shard_image = Image.fromarray(data)
-                shard_image = data
+                shard_image = Image.fromarray(data)
+                #shard_image = data
                 break
