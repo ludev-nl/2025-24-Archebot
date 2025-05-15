@@ -55,15 +55,10 @@ def generate_lawnmower_path(coordinates, gpx_segment, step_size_m):
     width_m = geopy.distance.distance(p0, p3).m
     num_steps = int(np.ceil(width_m / step_size_m))
 
-    # Get the direction
-    # Use dir1 to rotate path 90 degrees
-    # dir1 = edge1 / np.linalg.norm(edge1)
-    dir2 = edge2 / np.linalg.norm(edge2)
-    
     step_size_coord = edge2 / num_steps
     
     for i in range(num_steps + 1):
-        offset = dir2 * (i * step_size_coord)
+        offset = i * step_size_coord
         start = p0 + offset
         end = p1 + offset
 
