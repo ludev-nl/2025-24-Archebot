@@ -65,10 +65,12 @@ def generate_lawnmower_path(coordinates, gpx_segment, step_size_m):
 
     path = []
 
+    step_size_coord = edge2 / num_steps
+    
     for i in range(num_steps + 1):
-        offset_vector = offset_unit * (i * step_size_m)
-        start = p0 + offset_vector
-        end = p1 + offset_vector
+        offset = i * step_size_coord
+        start = p0 + offset
+        end = p1 + offset
 
         # Alternate direction for each sweep
         if i % 2 == 0:
