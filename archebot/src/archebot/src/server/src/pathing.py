@@ -1,6 +1,9 @@
+import gpxpy
 import gpxpy.gpx
 import numpy as np
 import geopy.distance
+from geopy.distance import geodesic
+from pyproj import Transformer
 
 def create_gpx(points, step_size_m=1, list=False):
     # Creating a new file:
@@ -39,45 +42,43 @@ def angle(point: tuple, centroid: tuple):
 def generate_lawnmower_path(coordinates, gpx_segment, step_size_m):
     if len(coordinates) != 4:
         raise ValueError("Exactly 4 corners required.")
-    
-    list = []
 
-    # Sort the corners 
-    sorted_points = sort_points(coordinates)
-    p0, p1, p2, p3 = [np.array(p) for p in sorted_points]
+    # Convert lat/lon to local Cartesian (meters)
+    transformer = Transformer.from_crs("EPSG:4326", "EPSG:3857", always_xy=True)
+    inverse_transformer = Transformer.from_crs("EPSG:3857", "EPSG:4326", always_xy=True)
 
-    # Assume rectangle: p0 -> p1 -> p2 -> p3 -> p0
-    # Use edge1 when rotating path    
-    # edge1 = p1 - p0  # sweep direction
-    edge2 = p3 - p0  # offset direction
+    coords_xy = [np.array(transformer.transform(lon, lat)) for lat, lon in coordinates]
 
-    # Calculate the number of steps
-    width_m = geopy.distance.distance(p0, p3).m
-    num_steps = int(np.ceil(width_m / step_size_m))
+    # Sort corners if needed
+    p0, p1, p2, p3 = coords_xy
 
-    # Get the direction
-    # Use dir1 to rotate path 90 degrees
-    # dir1 = edge1 / np.linalg.norm(edge1)
-    dir2 = edge2 / np.linalg.norm(edge2)
-    
-    step_size_coord = edge2 / num_steps
-    
+    # Define sweep direction (from p0 to p1) and offset direction (p0 to p3)
+    sweep_dir = p1 - p0
+    offset_dir = p3 - p0
+
+    # Normalize directions
+    sweep_unit = sweep_dir / np.linalg.norm(sweep_dir)
+    offset_unit = offset_dir / np.linalg.norm(offset_dir)
+
+    width = np.linalg.norm(offset_dir)
+    num_steps = int(np.ceil(width / step_size_m))
+
+    path = []
+
     for i in range(num_steps + 1):
-        offset = dir2 * (i * step_size_coord)
-        start = p0 + offset
-        end = p1 + offset
+        offset_vector = offset_unit * (i * step_size_m)
+        start = p0 + offset_vector
+        end = p1 + offset_vector
 
+        # Alternate direction for each sweep
         if i % 2 == 0:
-            gpx_segment.points.append(gpxpy.gpx.GPXTrackPoint(start[0], start[1]))
-            gpx_segment.points.append(gpxpy.gpx.GPXTrackPoint(end[0], end[1]))
-            
-            list.append((start[0], start[1]))
-            list.append((end[0], end[1]))
+            line = [start, end]
         else:
-            gpx_segment.points.append(gpxpy.gpx.GPXTrackPoint(end[0], end[1]))
-            gpx_segment.points.append(gpxpy.gpx.GPXTrackPoint(start[0], start[1]))
-            
-            list.append((end[0], end[1]))
-            list.append((start[0], start[1]))
+            line = [end, start]
 
-    return list, gpx_segment
+        for point in line:
+            lon, lat = inverse_transformer.transform(point[0], point[1])
+            gpx_segment.points.append(gpxpy.gpx.GPXTrackPoint(lat, lon))
+            path.append((lat, lon))
+
+    return path, gpx_segment
