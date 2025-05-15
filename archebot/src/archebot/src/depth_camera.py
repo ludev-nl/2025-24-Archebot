@@ -1,15 +1,17 @@
-import traceback
-import numpy as np
-import cv2
 import os
+import traceback
+
+import cv2
+import numpy as np
 from sensor_msgs.msg import Image
 
 
 def main(data: Image) -> None:
     numpdata = cam_to_array(data)
     path = os.path.dirname(os.path.abspath(__file__))
-    path = os.path.join(path,"test.png")
+    path = os.path.join(path, "test.png")
     array_to_image(path, numpdata)
+
 
 def array_to_image(path: str, numpdata: np.array) -> None:
     """
@@ -17,12 +19,13 @@ def array_to_image(path: str, numpdata: np.array) -> None:
     Input: path: string, array: numpy array
     Output: None (image file in directory)
     """
-    numpdata = (numpdata/np.max(numpdata)*255).astype(np.uint8)
+    numpdata = (numpdata / np.max(numpdata) * 255).astype(np.uint8)
     try:
         cv2.imwrite(path, numpdata)
     except Exception as e:
         print(e)
         print(traceback.format_exc())
+
 
 def cam_to_array(data: Image) -> np.array:
     """

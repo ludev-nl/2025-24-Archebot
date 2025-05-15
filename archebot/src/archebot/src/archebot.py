@@ -1,27 +1,36 @@
 #!/usr/bin/env python3
 #coding=utf-8
 
+from sensor_msgs.msg import Image, NavSatFix
+import sys
+import rospy
+import shard_detection
+import os
+import threading
 
-import sys, rospy
+# Add /server/src to PYTHONPATH
+sys.path.append(os.path.join(os.path.dirname(__file__), "server", "src"))
+from routes import app
 
-from sensor_msgs.msg import NavSatFix
-from sensor_msgs.msg import Image
-
-import gps, depth_camera
-from gps_logger import log_location
+def start_flask():
+    app.run(host="0.0.0.0", port=5000)
 
 def ros_exit() -> None:
     sys.exit()
 
-
 if "__main__" == __name__:
+    # Start the webserver
+    flask_thread = threading.Thread(target=start_flask)
+    flask_thread.daemon = True
+    flask_thread.start()
+    
+    # Initialize ros node
     rospy.init_node("archebot", anonymous=True, log_level=rospy.INFO, disable_signals=False)
     rospy.on_shutdown(ros_exit)
 
-    # rospy.Subscriber("/ublox/fix", NavSatFix, gps.main)
-    # rospy.Subscriber("/d455_camera/depth/image_rect_raw", Image, depth_camera.main)
-    # rospy.Subscriber("/camera/image_raw", Image, camera.main)
+    # Subscribe on topics
+    rospy.Subscriber("/ublox/fix", NavSatFix, shard_detection.save_location)
+    rospy.Subscriber("/camera/image_raw", Image, shard_detection.shard_detection)
     
-    rospy.Subscriber("/ublox/fix", NavSatFix, log_location)
-    
+    # Block untill the node is shutdown
     rospy.spin()
