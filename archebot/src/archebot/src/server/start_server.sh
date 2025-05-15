@@ -22,7 +22,7 @@ echo "Virtual environment activated."
 
 # Install dependencies
 echo "Installing dependencies..."
-pip install -r "$SCRIPT_DIR/requirements.txt"
+pip install -r "$SCRIPT_DIR/../../../../../requirements.txt"
 
 echo "Dependencies installed."
 
