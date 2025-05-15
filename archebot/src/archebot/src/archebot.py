@@ -12,7 +12,7 @@ from geometry_msgs.msg import Twist
 import gps
 from gps_logger import log_location
 from object_avoidance import Avoider
-from drive import drive
+from drive import Driver
 
 def ros_exit() -> None:
     sys.exit()
@@ -22,6 +22,7 @@ if "__main__" == __name__:
     rospy.Publisher("cmd_vel", Twist, queue_size=1)
     rospy.Publisher("object_detection", String, queue_size=10)
     avoider = Avoider()
+    driver = Driver()
 
     rospy.init_node("archebot", anonymous=True, log_level=rospy.INFO, disable_signals=False)
     rospy.on_shutdown(ros_exit)
@@ -33,7 +34,10 @@ if "__main__" == __name__:
     # rospy.Subscriber("/ublox/fix", NavSatFix, log_location)
 
     rospy.Subscriber("/d455_camera/depth/image_rect_raw", Image, avoider.initialize)
-    rospy.Subscriber("/d455_camera/depth/image_rect_raw", Image, avoider.detect_object)    
-    rospy.Subscriber("object_detection", String, drive)
+    rospy.Subscriber("/d455_camera/depth/image_rect_raw", Image, avoider.detect_object)   
+    rospy.Subscriber("/d455_camera/depth/image_rect_raw", Image, driver.drive)  
+    rospy.Subscriber("object_detection", String, driver.update_object)
+    rospy.Subscriber("/ublox_gps_node/fix", NavSatFix, driver.update_gps)
+    
 
     rospy.spin()
