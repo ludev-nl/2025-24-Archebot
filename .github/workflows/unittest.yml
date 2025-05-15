@@ -34,5 +34,5 @@ jobs:
           which pip3
           
           pip3 install uv
-          uv pip install -r ./requirements.txt
+          UV_SYSTEM_PYTHON=$(which python3) uv pip install -r requirements.txt --system
           pytest
