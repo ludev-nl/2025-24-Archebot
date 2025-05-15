@@ -1,19 +1,37 @@
+name: unittests
+
 on:
-  workflow_run:
-    workflows: ["Lint with ruff"]  # Name of the other workflow
-    types:
-      - completed  # Wait for completion
+  push:
+    branches:
+      - main
+      - dev
+      - workflows
 
 jobs:
   test:
     name: Run Tests
     runs-on: ubuntu-latest
+    container:
+      image: ubuntu:focal
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-python@v5
+
+      - uses: ros-tooling/setup-ros@v0.7
         with:
-          python-version: "3.8"
-          cache: pip
-      - run:  |
-          pip install -r ./archebot/src/archebot/test/requirements.txt
+          required-ros-distributions: noetic
+
+      - name: Install dependencies and run tests
+        shell: bash
+        run: |
+          apt update
+          apt install -y python3-pip ros-noetic-sensor-msgs ros-noetic-roslaunch
+          source /opt/ros/noetic/setup.bash
+          
+          echo "ROS_PACKAGE_PATH: $ROS_PACKAGE_PATH"
+          python3 --version
+          pip3 --version
+          which python3
+          which pip3
+          
+          pip3 install -r ./archebot/src/archebot/test/requirements.txt
           pytest
