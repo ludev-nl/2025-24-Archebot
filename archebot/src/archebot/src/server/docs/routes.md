@@ -31,27 +31,6 @@ The API is hosted on the Leorover: `http://10.0.0.1:5000`
 
 ---
 
-#### **POST** `/locationlogs`
-- **Description:** Add a new location log.
-- **Request:**
-  - JSON payload in the following format:
-    ```json
-    {
-      "timestamp": "2025-03-13T14:10:00Z",
-      "latitude": 51.9225,
-      "longitude": 4.47917
-    }
-    ```
-- **Response:**
-    - **201 Created:** Success message:
-    ```json
-    { "message": "Location log added" }
-    ```
-    - **400 Bad Request:** Validation errors.
-    - **500 Internal Server Error:** Any other errors.
-
----
-
 ### 2. **Logs**
 
 #### **GET** `/logs`
@@ -69,30 +48,10 @@ The API is hosted on the Leorover: `http://10.0.0.1:5000`
 
 ---
 
-#### **POST** `/logs`
-- **Description:** Add a new log.
-- **Request:**
-  - JSON payload in the following format:
-    ```json
-    {
-      "message": "Some log message",
-      "timestamp": "2025-03-13T14:10:00Z"
-    }
-    ```
-- **Response:**
-    - **201 Created:** Success message:
-    ```json
-    { "message": "Log added" }
-    ```
-    - **400 Bad Request:** Validation errors.
-    - **500 Internal Server Error:** Any other errors.
-
----
-
 ### 3. **Shards**
 
 #### **GET** `/shards`
-- **Description:** Retrieve all shards, including their photos as base64-encoded strings.
+- **Description:** Retrieve all shards, including their photos as url. Can be retrieved using `\static\photo_url`.
 - **Response:**
     - **200 OK:** A list of shards in the following format:
     ```json
@@ -101,32 +60,11 @@ The API is hosted on the Leorover: `http://10.0.0.1:5000`
         "id": 1,
         "latitude": 51.9225,
         "longitude": 4.47917,
-        "photo": "base64encodedstring"
+        "photo": "photo_url"
       }
     ]
     ```
     - **500 Internal Server Error:** If the database query fails.
-
----
-
-#### **POST** `/shards`
-- **Description:** Add a new shard.
-- **Request:**
-  - JSON payload in the following format:
-    ```json
-    {
-      "latitude": 51.9225,
-      "longitude": 4.47917,
-      "photo": "base64encodedstring"
-    }
-    ```
-- **Response:**
-    - **201 Created:** Success message:
-      ```json
-      { "message": "Shard added" }
-      ```
-    - **400 Bad Request:** Validation errors.
-    - **500 Internal Server Error:** Any other errors.
 
 ---
 
@@ -161,6 +99,36 @@ The API is hosted on the Leorover: `http://10.0.0.1:5000`
     - **400 Bad Request:** Validation error.
 
 ---
+
+#### **GET** `/box-coordinates`
+- **Description** Given four coordinates, returns a lawnmower path. 
+  ```json
+    [
+      {
+        "southWest": {"lat": 1.23, "lng": 4.56},
+        "southEast": {"lat": 1.23, "lng": 4.56},
+        "northWest": {"lat": 1.23, "lng": 4.56},
+        "northEast": {"lat": 1.23, "lng": 4.56}
+      }
+    ]
+  ```
+- **Response** A list of coordinates, forming the lawnmower path. 
+  ```json
+    [
+      {
+        "coordinates": [ [1.23, 4.56], [7.89, 10.11] ]
+      }
+    ]
+  ```
+
+---
+
+### 5. **Events**
+
+#### **POST** `/start`
+- **Description** Give the Leorover the start command.
+- **Response**
+    - **200 OK:** Command received.
 
 ## Notes
 - The API uses Flask as framework for the webserver.
