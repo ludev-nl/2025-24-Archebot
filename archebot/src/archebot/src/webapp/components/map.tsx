@@ -14,60 +14,7 @@ interface MapProps {
   path?: L.LatLngExpression[];
 }
 
-function toPoint(map: L.Map, latlng: L.LatLng) {
-  let zoom = map.getMaxZoom();
-  if (zoom === Infinity) {
-    zoom = map.getZoom();
-  }
-  return map.project(latlng, zoom);
-}
 
-function toLatLng(map: L.Map, point: L.Point) {
-  let zoom = map.getMaxZoom();
-  if (zoom === Infinity) {
-    zoom = map.getZoom();
-  }
-  return map.unproject(point, zoom);
-}
-
-function getRotatedRectangle(A: L.LatLng, B: L.LatLng, rotation: number, map: L.Map) {
-  const startPoint = toPoint(map, A);
-  const endPoint = toPoint(map, B);
-  const theta = (rotation * Math.PI) / 180;
-  const cos = Math.cos(theta);
-  const sin = Math.sin(theta);
-
-  const width =
-    (endPoint.x - startPoint.x) * cos + (endPoint.y - startPoint.y) * sin;
-  const height =
-    (endPoint.y - startPoint.y) * cos - (endPoint.x - startPoint.x) * sin;
-  const x0 = width * cos + startPoint.x;
-  const y0 = width * sin + startPoint.y;
-  const x1 = -height * sin + startPoint.x;
-  const y1 = height * cos + startPoint.y;
-
-  const p0 = toLatLng(map, startPoint);
-  const p1 = toLatLng(map, L.point(x0, y0));
-  const p2 = toLatLng(map, endPoint);
-  const p3 = toLatLng(map, L.point(x1, y1));
-  return [p0, p1, p2, p3];
-}
-
-function rotateLatLngAroundCenter(
-  point: L.LatLng,
-  center: L.LatLng,
-  angleDeg: number
-): L.LatLng {
-  const angleRad = (angleDeg * Math.PI) / 180;
-
-  const dx = point.lng - center.lng;
-  const dy = point.lat - center.lat;
-
-  const rotatedLng = dx * Math.cos(angleRad) - dy * Math.sin(angleRad);
-  const rotatedLat = dx * Math.sin(angleRad) + dy * Math.cos(angleRad);
-
-  return L.latLng(center.lat + rotatedLat, center.lng + rotatedLng);
-}
 
 const Map = ({ onBoxChange, path }: MapProps) => {
   const [box, setBox] = useState<{
@@ -254,10 +201,7 @@ const Map = ({ onBoxChange, path }: MapProps) => {
       southEast: corners[0][2],
       northEast: corners[0][3],
     };
-    L.marker(corners[0][0]).addTo(mapRef.current!);
-    L.marker(corners[0][1]).addTo(mapRef.current!);
-    L.marker(corners[0][2]).addTo(mapRef.current!);
-    L.marker(corners[0][3]).addTo(mapRef.current!);
+
     setBox(newBox);
     onBoxChange(newBox);
   }
