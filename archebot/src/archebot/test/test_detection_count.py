@@ -31,7 +31,7 @@ def helper_detection_count(imgname: str, labelname: str) -> None:
     assert pred_count == true_count, f"Predicted {pred_count}, but expected {true_count}"
 
 def test_detection_count():
-    helper_detection_count("test_detection_0.jpeg", "test_detection_0.txt")
-    helper_detection_count("test_detection_1.jpeg", "test_detection_1.txt")
-    helper_detection_count("test_detection_2.jpeg", "test_detection_2.txt")
-    helper_detection_count("test_detection_5.jpeg", "test_detection_5.txt")
+    helper_detection_count("images/test_detection_0.jpeg", "labels/test_detection_0.txt")
+    helper_detection_count("images/test_detection_1.jpeg", "labels/test_detection_1.txt")
+    helper_detection_count("images/test_detection_2.jpeg", "labels/test_detection_2.txt")
+    helper_detection_count("images/test_detection_3.jpeg", "labels/test_detection_3.txt")

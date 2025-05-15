@@ -60,7 +60,7 @@ def helper_detection_box(imgname: str, labelname: str, iou_threshold=0.5):
             assert max_score >= iou_threshold, "IOU of {max_score} of predicted box is lower than threshold {iou_threshold}"
 
 def test_detection_box():
-    helper_detection_box("test_detection_0.jpeg", "test_detection_0.txt")
-    helper_detection_box("test_detection_1.jpeg", "test_detection_1.txt")
-    helper_detection_box("test_detection_2.jpeg", "test_detection_2.txt")
-    helper_detection_box("test_detection_5.jpeg", "test_detection_5.txt")
+    helper_detection_box("images/test_detection_0.jpeg", "labels/test_detection_0.txt")
+    helper_detection_box("images/test_detection_1.jpeg", "labels/test_detection_1.txt")
+    helper_detection_box("images/test_detection_2.jpeg", "labels/test_detection_2.txt")
+    helper_detection_box("images/test_detection_3.jpeg", "labels/test_detection_3.txt")
