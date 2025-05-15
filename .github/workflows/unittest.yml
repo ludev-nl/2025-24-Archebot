@@ -15,16 +15,19 @@ jobs:
       image: ubuntu:focal
     steps:
       - uses: actions/checkout@v3
+
       - uses: ros-tooling/setup-ros@v0.7
         with:
           required-ros-distributions: noetic
-      - run:  |
+
+      - name: Install dependencies and run tests
+        shell: bash
+        run: |
           apt update
           apt install -y python3-pip ros-noetic-sensor-msgs ros-noetic-roslaunch
           source /opt/ros/noetic/setup.bash
-
-          echo "ROS_PACKAGE_PATH: $ROS_PACKAGE_PATH"
           
+          echo "ROS_PACKAGE_PATH: $ROS_PACKAGE_PATH"
           python3 --version
           pip3 --version
           which python3
@@ -32,4 +35,3 @@ jobs:
           
           pip3 install -r ./archebot/src/archebot/test/requirements.txt
           pytest
-      shell: bash
