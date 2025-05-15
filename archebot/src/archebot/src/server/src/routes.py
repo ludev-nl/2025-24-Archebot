@@ -2,8 +2,7 @@ from flask import Flask, request, jsonify, redirect, send_from_directory
 from flask_cors import CORS
 import sqlite3
 import os
-import base64
-from datavalidation import LocationLogsSchema, LogsSchema, RouteSchema, BoxCoordinatesSchema
+from datavalidation import RouteSchema, BoxCoordinatesSchema
 from pathing import create_gpx
 from marshmallow import ValidationError
 import markdown
@@ -51,59 +50,12 @@ def get_location_logs():
     except Exception:
         return jsonify({"message":"Could not query database"}), 500
 
-
-@app.route('/locationlogs', methods=['POST'])
-def add_location_log():
-    
-    data = request.json
-    
-    schema = LocationLogsSchema()
-
-    try:
-        validated_data = schema.load(data)  # This will raise an exception if validation fails
-    except ValidationError as err:
-        return jsonify({"error": err.messages}), 400
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-    
-    try:
-        conn = get_db_connection()
-        conn.execute('INSERT INTO locationlogs (timestamp, latitude, longitude) VALUES (?, ?, ?)',
-                    (validated_data['timestamp'], validated_data['latitude'], validated_data['longitude']))
-        conn.commit()
-        conn.close()
-        return jsonify({"message": "Location log added"}), 201
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
 @app.route('/logs', methods=['GET'])
 def get_logs():
     conn = get_db_connection()
     logs = conn.execute('SELECT * FROM logs').fetchall()
     conn.close()
     return jsonify([dict(log) for log in logs]), 200
-
-@app.route('/logs', methods=['POST'])
-def add_log():
-    data = request.json
-    schema = LogsSchema()
-    
-    try:
-        validated_data = schema.load(data)  # This will raise an exception if validation fails
-    except ValidationError as err:
-        return jsonify({"error": err.messages}), 400
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-    
-    try:
-        conn = get_db_connection()
-        conn.execute('INSERT INTO logs (message, timestamp) VALUES (?, ?)',
-                    (validated_data['message'], validated_data['timestamp']))
-        conn.commit()
-        conn.close()
-        return jsonify({"message": "Log added"}), 201
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500 
 
 @app.route('/shards', methods=['GET'])
 def get_shards():
@@ -181,13 +133,9 @@ def receive_box_coordinates():
 
 @app.route('/start', methods=['POST'])
 def start_process():
-    try:
-        data = request.get_json()
-        print("Start event received:", data)
-        
-        return jsonify({"message": "Start event received"}), 200
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    # TODO: start drive script
+    print("Start event received")
+    return jsonify({"message": "Start event received"}), 200
   
 # Start server on port 5000    
 if __name__ == '__main__':
