@@ -28,17 +28,6 @@ const Map = ({ onBoxChange, path }: MapProps) => {
     southEast: null,
     northWest: null,
   });
-  const [box2, setBox2] = useState<{
-    southWest: L.LatLng | null;
-    northEast: L.LatLng | null;
-    southEast: L.LatLng | null;
-    northWest: L.LatLng | null;
-  }>({
-    southWest: null,
-    northEast: null,
-    southEast: null,
-    northWest: null,
-  });
   
   
 
@@ -46,11 +35,6 @@ const Map = ({ onBoxChange, path }: MapProps) => {
   useEffect(() => {
     boxRef.current = box; // ← keep ref in sync
   }, [box]);
-
-  const box2Ref = useRef(box2);
-  useEffect(() => {
-    box2Ref.current = box2;
-  }, [box2]);
 
   const mapRef = useRef<L.Map | null>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
@@ -84,30 +68,31 @@ const Map = ({ onBoxChange, path }: MapProps) => {
 
     mapRef.current.on("pm:create", (e) => {
       if (e.shape === "Rectangle") {
+        
+
         if (rectangleRef.current) {
           mapRef.current?.removeLayer(rectangleRef.current);
         }
 
         const layer = e.layer as L.Rectangle;
+
         rectangleRef.current = layer;
         updateBoxCoordinates(layer);
+        rectangleRef.current.bringToFront();
 
-        layer.on("pm:rotatestart", () => {
-          setBox2(boxRef.current);
-          console.log("Box2:", box2Ref.current);
-        });
 
         layer.on("pm:rotateend", (e) => {
           const angle = layer.pm.getAngle();
           const center = layer.pm.getRotationCenter();
           updateRotateBoxCoordinates(layer, center, angle);
+      
         });
 
-        layer.on("pm:editend gm:dragend", () => {
+        layer.on("pm:edit pm:dragend", () => {
           console.log("Edit or drag ended");
           updateBoxCoordinates(layer);
         });
-        
+
         layer.on("pm:rotate", () => {
           const rotationCenter = layer.pm.getRotationCenter();
           const angle = layer.pm.getAngle();
@@ -159,13 +144,17 @@ const Map = ({ onBoxChange, path }: MapProps) => {
         opacity: 0.7,
       }).addTo(mapRef.current);
 
+      // Disable all Geoman functionality
+      polyline.pm.disable();              // Disables edit + drag
+      polyline.pm.disableRotate();        // Prevent rotation
+
       pathLineRef.current = polyline;
-      polyline.pm.setOptions({
+      pathLineRef.current.pm.setOptions({
         draggable: false,
         allowRotation: false,
         allowEditing: false,
       });
-      polyline.pm.disable();
+      pathLineRef.current?.bringToBack();
 
     } catch (error) {
       console.error("Error creating polyline:", error);
@@ -188,7 +177,7 @@ const Map = ({ onBoxChange, path }: MapProps) => {
   };
 
   const updateRotateBoxCoordinates = (layer: L.Rectangle, center: L.LatLng, degrees: number) => {
-    console.log("Rotating corners:", box2Ref.current);
+    
     const rotationCenter = layer.pm.getRotationCenter();
     const angle = layer.pm.getAngle();
     layer.pm.setRotationCenter(rotationCenter);
