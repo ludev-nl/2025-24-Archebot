@@ -1,5 +1,4 @@
 roslibpy==1.7.0
-sensor_msgs==1.13.1
 Flask==2.2.5
 Markdown==3.7
 marshmallow==3.22.0
