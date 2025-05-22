@@ -1,8 +1,12 @@
+
 from depth_camera_functions import cam_to_array, array_to_image
-from std_msgs.msg import String
+from std_msgs.msg import String, UInt8
 import numpy as np
 import rospy
 import time
+import os
+import sys
+from enums import Object
 
 class Avoider:
     def __init__(self):
@@ -22,9 +26,9 @@ class Avoider:
         section_amount = 5
         self.section_width = self.view_width//section_amount
         self.view_sections = [(i * self.section_width, (i + 1) * self.section_width) for i in range(section_amount)] # the relative view sections
-        self.publisher = rospy.Publisher("object_detection", String, queue_size=10)
+        self.publisher = rospy.Publisher("object_detection", UInt8, queue_size=10)
         self.counter = 0 
-        self.object = False
+        self.object = Object.NOBJECT
 
 
     @staticmethod
@@ -74,25 +78,39 @@ class Avoider:
         np.save("filtered_arr.npy", arr_view)
         array_to_image("filtered_arr.png", arr_view)
         if np.any(self.corrected[:, self.view[1][0]:self.view[1][1]] - arr_view > 0): # detect only exactly in front
-            if not self.object:
-                self.publisher.publish("OBJECT")
-                self.object = True
             # if left detects oject
             if np.any(self.corrected[:, self.view[1][0]+self.view_sections[0][0]:self.view[1][0]+self.view_sections[0][1]] - arr_view[:,self.view_sections[0][0]:self.view_sections[0][1]]>0):
-                self.publisher.publish("OBJECT LEFT")
+                if self.object == Object.LEFT:
+                    return
+                self.publisher.publish(Object.LEFT.value)
+                self.object = Object.LEFT
                 print("AAH object left")
+            # right detects object
             elif np.any(self.corrected[:, self.view[1][0]+self.view_sections[4][0]:self.view[1][0]+self.view_sections[4][1]] - arr_view[:,self.view_sections[4][0]:self.view_sections[4][1]]>0):
-                self.publisher.publish("OBJECT RIGHT")
+                if self.object == Object.RIGHT:
+                    return
+                self.publisher.publish(Object.RIGHT.value)
+                self.object = Object.RIGHT
                 print("AAH object right")
+            elif not self.object:
+                if self.object == Object.OBJECT:
+                    return
+                self.publisher.publish(Object.OBJECT.value)
+                self.object = Object.OBJECT
         else:
-            if self.object:
-                self.publisher.publish("NOBJECT")
-                self.object = False
+            if self.object == Object.NOBJECT:
+                return
+            self.publisher.publish(Object.NOBJECT.value)
+            self.object = Object.NOBJECT
         
 
     def initialize(self, data):
         # so it only runs once
         if self.initialized:
+            return
+
+        #so it runs after the user has set up the route and pushed the start button
+        if os.environ.get("archebot_start") != "true":
             return
 
         # numpy array of data
@@ -107,7 +125,8 @@ class Avoider:
         print(alpha)
         B =  median/np.cos(alpha)
         if B == 0:
-            print("Calibration failed, recalibrate!")
+            print("Calibration failed")
+            sys.exit(2)
         angle = np.arccos(self.camera_height / B) # absolute angle to lowest point on camera that is used
         # angle to the middle of the camera
         angle_to_middle = angle + alpha # angle to a certain point + the relative angle to the middle
@@ -135,5 +154,3 @@ class Avoider:
 
         self.initialized = True
         print("avoider initialized")
-
-

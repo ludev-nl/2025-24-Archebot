@@ -1,17 +1,22 @@
 import rospy
 import math
 import time
+import gpxpy
+import gpxpy.gpx
+import os
+import sys
 from geometry_msgs.msg import Twist
 from sensor_msgs.msg import NavSatFix, Imu
-from std_msgs.msg import String
+from std_msgs.msg import String, UInt8
 from tf.transformations import euler_from_quaternion
+from enums import Object
 
 class Driver:
     def __init__(self):
         self.lat = 0.0
         self.long = 0.0
         self.imu_yaw = 0.0
-        self.object = False
+        self.object = Object.NOBJECT
         self.last_time = None
         self.previous_lat = None
         self.previous_long = None
@@ -30,17 +35,33 @@ class Driver:
         self.MIN_DIST_FOR_HEADING = 0.5
 
         self.cmd_pub = rospy.Publisher("cmd_vel", Twist, queue_size=1)
+        self.first_time = True
+        
 
         rospy.Subscriber("/gps", NavSatFix, self.update_gps)
         rospy.Subscriber("/imu", Imu, self.update_imu)
-        rospy.Subscriber("/object_detection", String, self.update_object)
+        rospy.Subscriber("/object_detection", UInt8, self.update_object)
         rospy.Timer(rospy.Duration(0.1), self.drive)
 
         print("Driver initialized")
 
+    def read_gpx_file(self):
+        try:
+            SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
+            GPX_PATH = os.path.join(SCRIPT_DIR, "server/db/routes", "route.gpx")
+            with open(GPX_PATH, "r") as gpx_file:
+                gpx = gpxpy.parse(gpx_file)
+
+            for point in gpx.tracks[0].segments[0].points:
+                print('Point at ({0},{1})'.format(point.latitude, point.longitude))
+
+        except:
+            print(f"File not found: {GPX_PATH}")
+            sys.exit(1)
+
+
     def update_object(self, data):
-        print(data.data)
-        self.object = data.data != "NOBJECT"
+        self.object = Object(data.data)
 
     def update_gps(self, data):
         self.lat = data.latitude
@@ -101,13 +122,13 @@ class Driver:
         return linear_x, angular_z
 
     def drive(self, _):
-        twist = Twist()
-
-        if self.object:
-            twist.linear.x = 0.0
-            twist.angular.z = 0.0
-            self.cmd_pub.publish(twist)
+        if os.environ.get("archebot_start") != "true":
             return
+        if self.first_time:
+            self.read_gpx_file()
+            self.first_time = False
+
+        twist = Twist()
 
         now = time.time()
         dt = now - self.last_time if self.last_time else 0.1
@@ -146,4 +167,17 @@ class Driver:
         twist.angular.z = angular_z
 
         rospy.loginfo(f"[DRIVER] Dist: {distance_to_target:.2f}m | Heading Err: {math.degrees(heading_error):.2f} | Lin: {linear_x:.2f} | Ang: {angular_z:.2f}")
+
+        # check if object too close to robot in front
+        if self.object == Object.OBJECT:
+            twist.linear.x = 0.0
+            twist.angular.z = 0.0
+        elif self.object == Object.LEFT:
+            twist.linear.x = 0.0
+            twist.angular.z = -0.1
+        elif self.object == Object.RIGHT:
+            twist.linear.x = 0.0
+            twist.angular.z = 0.1
+        print(self.object)
+
         self.cmd_pub.publish(twist)
