@@ -4,7 +4,7 @@ import random
 import cv2
 import numpy as np
 from sensor_msgs.msg import Image
-from src.depth_camera import array_to_image, cam_to_array
+from src.depth_camera_functions import array_to_image, cam_to_array
 
 
 def test_cam_to_array():
