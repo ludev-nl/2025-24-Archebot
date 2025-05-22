@@ -25,11 +25,12 @@ def save_location(data) -> None:
     if shard_image is None:
         return
     
-    base_filename = f"{data.longitude},{data.latitude}.jpg"
-    image_path_relative = f"server/src/static/{base_filename}"
+    filename = f"{data.longitude},{data.latitude}.jpg"
+    image_path_relative = f"server/src/static/{filename}"
     index = 1
     # Add _n for images with the same location/no location
     while os.path.exists(cwd + "/" + image_path_relative):
+        filename = f"{data.longitude},{data.latitude}_{index}.jpg"
         image_path_relative = f"server/src/static/{data.longitude},{data.latitude}_{index}.jpg"
         index += 1
     
@@ -38,7 +39,7 @@ def save_location(data) -> None:
     
     # database entry
     conn = get_db_connection()
-    conn.execute('INSERT INTO shards (latitude, longitude, photo) VALUES (?, ?, ?)', (data.latitude, data.longitude, full_path))
+    conn.execute('INSERT INTO shards (latitude, longitude, photo) VALUES (?, ?, ?)', (data.latitude, data.longitude, filename))
     conn.commit()
     conn.close()
 
