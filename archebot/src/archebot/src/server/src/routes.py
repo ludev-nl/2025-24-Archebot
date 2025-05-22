@@ -64,7 +64,7 @@ def get_shards():
         shards = conn.execute('SELECT id, latitude, longitude, photo FROM shards').fetchall()
         conn.close()
         
-        return jsonify([dict(shards) for s in shards]), 200
+        return jsonify([dict(s) for s in shards]), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     
@@ -139,4 +139,10 @@ def start_process():
   
 # Start server on port 5000    
 if __name__ == '__main__':
+    # conn = get_db_connection()
+    # # conn.execute('INSERT INTO shards (latitude, longitude, photo) VALUES (?, ?, ?)', 
+    # #              (51.505, -0.09, 'hello.jpg'))
+    # # conn.execute('DELETE FROM shards WHERE id <= 7')
+    # conn.commit()
+    # conn.close()
     app.run(host='0.0.0.0', port=4000, debug=True)

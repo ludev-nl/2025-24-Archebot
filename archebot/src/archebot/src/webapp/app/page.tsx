@@ -15,6 +15,19 @@ const Map = dynamic(() => import("@/components/map"), {
   ),
 })
 
+type Shard = {
+  id: number;
+  latitude: number;
+  longitude: number;
+  photo?: string; // optional if sometimes missing
+};
+
+export type ShardInfo = {
+  lat: number;
+  lng: number;
+  image: string | null; // Use optional chaining to handle missing photo
+}
+
 export default function Home() {
   // State to hold the box coordinates
   const [Box, setBox] = useState<{
@@ -55,21 +68,34 @@ export default function Home() {
     }
   }, [Box])
 
-  const [shards, setShards] = useState([]); // State to hold the shards
-
+  const [shards, setShards] = useState<ShardInfo[]>([]); // State to hold the shards
+  
   useEffect(() => {
     const fetchShards = () => {
       fetch("http://localhost:4000/shards")
         .then((res) => res.json())
-        .then((data) => setShards(data))
-        .catch((err) => console.error("Failed to fetch shards:", err))
-    }
+        .then((data) => {
+          console.log("Raw server response:", data);
+          const simplifiedShards = data.map((shard: Shard) => ({
+            lat: shard.latitude,
+            lng: shard.longitude,
+            image: shard.photo || null, // Use optional chaining to handle missing photo
+          }));
 
+          setShards(simplifiedShards)
+          console.log("Fetched shards:", simplifiedShards)
+        })
+        .catch((err) => {
+          console.error("Failed to fetch shards:", err)
+        })
+    }
+    
     fetchShards() // initial fetch
     const intervalId = setInterval(fetchShards, 10000)
-
     return () => clearInterval(intervalId)
   }, [])
+
+
 
   // Send a start event to the server when the button is clicked
   const handleStart = () => {

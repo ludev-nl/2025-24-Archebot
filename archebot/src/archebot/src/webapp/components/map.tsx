@@ -3,6 +3,7 @@ import { useEffect, useState, useRef } from "react";
 import "leaflet/dist/leaflet.css";
 import "@geoman-io/leaflet-geoman-free";
 import "@geoman-io/leaflet-geoman-free/dist/leaflet-geoman.css";
+import type { ShardInfo } from "@/app/page"
 
 interface MapProps {
   onBoxChange: (box: {
@@ -11,10 +12,9 @@ interface MapProps {
     southEast: L.LatLng | null;
     northWest: L.LatLng | null;
   }) => void;
-  path?: L.LatLngExpression[];
-  shards?: L.LatLng[];
+  path?: L.LatLng[];
+  shards?: ShardInfo[];
 }
-
 
 const Map = ({ onBoxChange, path, shards}: MapProps) => {
   const [box, setBox] = useState<{
@@ -176,20 +176,37 @@ const Map = ({ onBoxChange, path, shards}: MapProps) => {
   };
 
   useEffect(() => {
-    if (!mapRef.current) return;
+    console.log("shards state:", shards);
+    if (!mapRef.current || !shards) return;
 
-    if (shards) {
-      shards.forEach((shard: L.LatLng) => {
-        const marker = L.marker(shard, {
-          icon: L.divIcon({
-            className: "custom-icon",
-            html: `<div class="custom-icon"></div>`,
-          }),
-        });
-        if (!mapRef.current) return;
-        marker.addTo(mapRef.current);
+    const map = mapRef.current;
+    
+    console.log("Shards:", shards);
+    shards.forEach((shard: ShardInfo) => {
+
+      const shardLatLng = L.latLng(shard.lat, shard.lng);
+      let exists = false;
+
+      map.eachLayer((layer) => {
+        if (layer instanceof L.Marker) {
+          const markerPos = layer.getLatLng();
+          if (markerPos.equals(shardLatLng)) {
+            exists = true;
+            return; // Stop checking if marker already exists
+          }
+        }
       });
-    }
+
+      if (exists) return; // Skip if marker already exists
+
+      if (!shard) return;
+      const marker = L.marker(L.latLng(shard.lat, shard.lng), {
+        icon: L.icon({iconUrl: shard.image ? shard.image : ""})
+      });
+      if (!mapRef.current) return;
+
+      marker.addTo(mapRef.current);
+    });
   }, [shards]);
 
   const updateRotateBoxCoordinates = (layer: L.Rectangle, center: L.LatLng, degrees: number) => {
