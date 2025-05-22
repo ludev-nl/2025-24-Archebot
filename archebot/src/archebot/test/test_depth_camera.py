@@ -3,19 +3,18 @@ import random
 
 import cv2
 import numpy as np
-
-from src.depth_camera_functions import array_to_image, cam_to_array
-
-
-class FakeImage:
-    def __init__(self):
-        self.data = bytes([random.randint(0, 255) for _ in range(614400)])
-        self.width = 640
-        self.height = 480
+from sensor_msgs.msg import Image
+from src.depth_camera import array_to_image, cam_to_array
 
 
 def test_cam_to_array():
-    fake_data = FakeImage()
+    # create fake image
+    fake_data = Image()
+    fake_data.width = 640
+    fake_data.height = 480
+    fake_data.data = bytes([random.randint(0, 255) for _ in range(614400)])
+
+    # convert to array
     array = cam_to_array(fake_data)
 
     for height in range(fake_data.height):
@@ -54,4 +53,3 @@ def test_array_to_image():
     )
 
     assert np.array_equal(ar, test_data)
-

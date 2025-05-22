@@ -1,11 +1,26 @@
 #!/usr/bin/env python3
 # coding=utf-8
-
+import os
 import sys
+import threading
+
 import rospy
-from std_msgs.msg import String
+import shard_detection
+from drive import Driver
+from geometry_msgs.msg import Twist
+from gps_logger import log_location
+from object_avoidance import Avoider
 from sensor_msgs.msg import Image, NavSatFix, Imu
 from geometry_msgs.msg import Twist
+from std_msgs.msg import String
+
+# Add /server/src to PYTHONPATH
+sys.path.append(os.path.join(os.path.dirname(__file__), "server", "src"))
+from routes import app
+
+
+def start_flask():
+    app.run(host="0.0.0.0", port=5000)
 
 from gps_logger import log_location
 from object_avoidance import Avoider
@@ -16,8 +31,19 @@ def ros_exit():
     sys.exit(0)
 
 def main():
-    rospy.init_node("archebot", anonymous=True, log_level=rospy.INFO)
+    rospy.init_node(
+        "archebot", anonymous=True, log_level=rospy.INFO, disable_signals=False
+    )
     rospy.on_shutdown(ros_exit)
+    
+    # Start the webserver
+    flask_thread = threading.Thread(target=start_flask)
+    flask_thread.daemon = True
+    flask_thread.start()
+
+    # start avoider and driver instance
+    rospy.Publisher("cmd_vel", Twist, queue_size=1)
+    rospy.Publisher("object_detection", String, queue_size=10)
 
     # Instantiate components
     avoider = Avoider()
@@ -28,11 +54,13 @@ def main():
     rospy.Subscriber("/d455_camera/depth/image_rect_raw", Image, avoider.detect_object)
     rospy.Subscriber("/d455_camera/depth/image_rect_raw", Image, driver.drive)
     
+    rospy.Subscriber("/camera/image_raw", Image, shard_detection.shard_detection)
     rospy.Subscriber("object_detection", String, driver.update_object)
+    rospy.Subscriber("/ublox/fix", NavSatFix, shard_detection.save_location)
+    rospy.Subscriber("/ublox/fix", NavSatFix, log_location)
     rospy.Subscriber("/ublox_gps_node/fix", NavSatFix, driver.update_gps)
     rospy.Subscriber("/imu/data", Imu, driver.update_imu)
 
-    # Start ROS loop
     rospy.spin()
 
 if __name__ == "__main__":
