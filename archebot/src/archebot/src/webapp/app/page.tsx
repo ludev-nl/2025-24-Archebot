@@ -1,9 +1,11 @@
 "use client"
+require('dotenv').config();
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+console.log("API_BASE_URL:", API_BASE_URL);
 
-import { useState, useEffect } from "react"
-import dynamic from "next/dynamic"
-import { Button } from "@/components/ui/button"
-
+import { useState, useEffect } from "react";
+import dynamic from "next/dynamic";
+import { Button } from "@/components/ui/button";
 
 // Import the map component dynamically to avoid SSR issues with Leaflet
 const Map = dynamic(() => import("@/components/map"), {
@@ -15,23 +17,28 @@ const Map = dynamic(() => import("@/components/map"), {
   ),
 })
 
-// Import the offline tile manager component
-const OfflineTileManager = dynamic(() => import("@/components/offline-tile-manager"), {
-  ssr: false,
-})
 
-// Import the offline map notice component
-const OfflineMapNotice = dynamic(() => import("@/components/offline-map-notice"), {
-  ssr: false,
-})
+type Shard = {
+  id: number;
+  latitude: number;
+  longitude: number;
+  photo?: string; // optional if sometimes missing
+};
+
+export type ShardInfo = {
+  lat: number;
+  lng: number;
+  image: string | null; // Use optional chaining to handle missing photo
+};
 
 export default function Home() {
+
   // State to hold the box coordinates
   const [Box, setBox] = useState<{
-    southWest: { lat: number; lng: number } | null
-    northEast: { lat: number; lng: number } | null
-    southEast: { lat: number; lng: number } | null
-    northWest: { lat: number; lng: number } | null
+    southWest: L.LatLng | null;
+    northEast: L.LatLng | null;
+    southEast: L.LatLng | null;
+    northWest: L.LatLng | null;
   }>({
     southWest: null,
     northEast: null,
@@ -39,12 +46,14 @@ export default function Home() {
     northWest: null,
   })
 
-  // send box coordinates to the server when all corners are set
+  const [path, setPath] = useState([]); // State to hold the path planning coordinates
+
+  // send box coordinates to the server when all corners are set and receive path planning coordinates
   useEffect(() => {
     const allCornersSet = Box.northEast && Box.southWest && Box.northWest && Box.southEast
-  
+    console.log("Box coordinates:", Box)
     if (allCornersSet) {
-      fetch("http://localhost:4000/box-coordinates", {
+      fetch(`${API_BASE_URL}/box-coordinates`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -54,12 +63,41 @@ export default function Home() {
         .then((res) => res.json())
         .then((data) => {
           console.log("Server response:", data)
+          setPath(data.coordinates) // returned path planning coordinates
         })
         .catch((err) => {
+          console.log(JSON.stringify(Box))
           console.error("Failed to send box coordinates:", err)
         })
     }
   }, [Box])
+
+  const [shards, setShards] = useState<ShardInfo[]>([]); // State to hold the shards
+  
+  useEffect(() => {
+    const fetchShards = () => {
+      fetch(`${API_BASE_URL}/shards`)
+        .then((res) => res.json())
+        .then((data) => {
+          const simplifiedShards = data.map((shard: Shard) => ({
+            lat: shard.latitude,
+            lng: shard.longitude,
+            image: shard.photo || null, // Use optional chaining to handle missing photo
+          }));
+
+          setShards(simplifiedShards)
+          console.log("Fetched shards:", simplifiedShards)
+        })
+        .catch((err) => {
+          console.error("Failed to fetch shards:", err)
+        })
+    }
+    
+    fetchShards() // initial fetch
+    const intervalId = setInterval(fetchShards, 10000)
+    return () => clearInterval(intervalId)
+  }, [])
+
 
   // Send a start event to the server when the button is clicked
   const handleStart = () => {
@@ -70,12 +108,12 @@ export default function Home() {
       return
     }
   
-    fetch("http://localhost:4000/start", {
+    fetch(`${API_BASE_URL}/start`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ message: "start_clicked", box: Box }),
+      body: JSON.stringify({message: "start_clicked"}),
     })
       .then((res) => res.json())
       .then((data) => {
@@ -85,42 +123,6 @@ export default function Home() {
         console.error("Failed to send start event:", err)
       })
   }
-  
-
-  // State to manage service worker registration status
-  const [serviceWorkerStatus, setServiceWorkerStatus] = useState<"loading" | "registered" | "failed">("loading")
-
-  // Register service worker for offline functionality
-  useEffect(() => {
-    // Only attempt to register service worker in production or when running locally
-    // Skip registration in preview environments
-    const isPreviewEnvironment = window.location.hostname.includes("vusercontent.net")
-
-    if ("serviceWorker" in navigator && !isPreviewEnvironment) {
-      setServiceWorkerStatus("loading")
-
-      // Use a try-catch block to handle potential errors
-      try {
-        navigator.serviceWorker
-          .register("/service-worker.js")
-          .then((registration) => {
-            console.log("Service Worker registered with scope:", registration.scope)
-            setServiceWorkerStatus("registered")
-          })
-          .catch((error) => {
-            console.error("Service Worker registration failed:", error)
-            setServiceWorkerStatus("failed")
-          })
-      } catch (error) {
-        console.error("Error during service worker registration:", error)
-        setServiceWorkerStatus("failed")
-      }
-    } else {
-      // If service workers aren't supported or we're in a preview environment
-      console.log("Service Workers not supported or skipped in preview environment")
-      setServiceWorkerStatus("failed")
-    }
-  }, [])
 
   return (
     <main className="container mx-auto py-8 px-4">
@@ -128,17 +130,6 @@ export default function Home() {
       <p className="mb-4 text-muted-foreground">
         Draw a rectangle on the map to get the latitude and longitude coordinates of the box and start the robot.
       </p>
-
-      {serviceWorkerStatus === "failed" && (
-        <div className="alert mb-4 p-4 bg-muted border rounded-md">
-          <p className="text-sm">
-            <strong>Note:</strong> Offline mode is limited in this preview environment. For full offline functionality,
-            deploy the application to a production environment.
-          </p>
-        </div>
-      )}
-
-      <OfflineMapNotice />
 
       {/* map with box */}
       <div className="space-y-6">
@@ -151,7 +142,7 @@ export default function Home() {
           </div>
           <div className="card-content">
             <div className="h-[600px] w-full rounded-md overflow-hidden border">
-              <Map onBoxChange={setBox}/>
+              <Map onBoxChange={setBox} path={path} shards={shards}/>
             </div>
           </div>
         </div>
@@ -199,23 +190,6 @@ export default function Home() {
             )}
           </div>
         </div>
-
-        {/* Only show the tile manager if service worker is registered successfully */}
-        {serviceWorkerStatus !== "failed" && <OfflineTileManager />}
-
-        {serviceWorkerStatus === "failed" && (
-          <div className="card">
-            <div className="card-header">
-              <h2 className="card-title">Offline Functionality</h2>
-            </div>
-            <div className="card-content">
-              <p className="text-sm text-muted-foreground">
-                Full offline functionality is not available in this preview environment. The application will still
-                work, but requires an internet connection for map tiles.
-              </p>
-            </div>
-          </div>
-        )}
       </div>
     </main>
   )

@@ -2,8 +2,7 @@ from flask import Flask, request, jsonify, redirect, send_from_directory
 from flask_cors import CORS
 import sqlite3
 import os
-import base64
-from datavalidation import LocationLogsSchema, LogsSchema, ShardsSchema, RouteSchema, BoxCoordinatesSchema
+from datavalidation import RouteSchema, BoxCoordinatesSchema
 from pathing import create_gpx
 from marshmallow import ValidationError
 import markdown
@@ -41,40 +40,22 @@ def get_docs():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@app.route('/locationlogs', methods=['GET'])
-def get_location_logs():
+@app.route('/locationlog', methods=['GET'])
+def get_location_log():
     try:
         conn = get_db_connection()
-        logs = conn.execute('SELECT * FROM locationlogs').fetchall()
+        log = conn.execute('SELECT * FROM locationlogs ORDER BY id DESC LIMIT 1').fetchone()
         conn.close()
-        return jsonify([dict(log) for log in logs]), 200
-    except Exception:
-        return jsonify({"message":"Could not query database"}), 500
 
+        if log is None:
+            return jsonify({"message": "No logs found"}), 404
 
-@app.route('/locationlogs', methods=['POST'])
-def add_location_log():
-    
-    data = request.json
-    
-    schema = LocationLogsSchema()
-
-    try:
-        validated_data = schema.load(data)  # This will raise an exception if validation fails
-    except ValidationError as err:
-        return jsonify({"error": err.messages}), 400
+        return jsonify(dict(log)), 200
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
-    
-    try:
-        conn = get_db_connection()
-        conn.execute('INSERT INTO locationlogs (timestamp, latitude, longitude) VALUES (?, ?, ?)',
-                    (validated_data['timestamp'], validated_data['latitude'], validated_data['longitude']))
-        conn.commit()
-        conn.close()
-        return jsonify({"message": "Location log added"}), 201
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        print("Error fetching latest log:", e)
+        return jsonify({"message": "Could not query database"}), 500
+
+
 
 @app.route('/logs', methods=['GET'])
 def get_logs():
@@ -83,28 +64,6 @@ def get_logs():
     conn.close()
     return jsonify([dict(log) for log in logs]), 200
 
-@app.route('/logs', methods=['POST'])
-def add_log():
-    data = request.json
-    schema = LogsSchema()
-    
-    try:
-        validated_data = schema.load(data)  # This will raise an exception if validation fails
-    except ValidationError as err:
-        return jsonify({"error": err.messages}), 400
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-    
-    try:
-        conn = get_db_connection()
-        conn.execute('INSERT INTO logs (message, timestamp) VALUES (?, ?)',
-                    (validated_data['message'], validated_data['timestamp']))
-        conn.commit()
-        conn.close()
-        return jsonify({"message": "Log added"}), 201
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500 
-
 @app.route('/shards', methods=['GET'])
 def get_shards():
     try:
@@ -112,42 +71,7 @@ def get_shards():
         shards = conn.execute('SELECT id, latitude, longitude, photo FROM shards').fetchall()
         conn.close()
         
-        # Convert the photo BLOB to a base64 string for each shard
-        result = []
-        for shard in shards:
-            # Create a dictionary to avoid modifying the sqlite3.Row directly
-            shard_dict = dict(shard)
-            if shard_dict['photo']:
-                shard_dict['photo'] = base64.b64encode(shard_dict['photo']).decode('utf-8')
-            result.append(shard_dict)
-        
-        return jsonify(result), 200
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-@app.route('/shards', methods=['POST'])
-def add_shard():
-    data = request.json
-    
-    schema = ShardsSchema()
-    
-    try:
-        validated_data = schema.load(data)  # This will raise an exception if validation fails
-    except ValidationError as err:
-        return jsonify({"error": err.messages}), 400
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-    
-    try:
-        # Convert base64 to image data
-        image_data = base64.b64decode(validated_data['photo'])
-        
-        conn = get_db_connection()
-        conn.execute('INSERT INTO shards (latitude, longitude, photo) VALUES (?, ?, ?)',
-                    (validated_data['latitude'], validated_data['longitude'], image_data))
-        conn.commit()
-        conn.close()
-        return jsonify({"message": "Shard added"}), 201
+        return jsonify([dict(s) for s in shards]), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     
@@ -207,9 +131,7 @@ def receive_box_coordinates():
         points.append((value["lat"], value["lng"]))
     
     # Also create gpx for future features
-    gpx, list = create_gpx(points, step_size_m=1, list=True)
-    
-    print(SCRIPT_DIR)
+    gpx, list = create_gpx(points, step_size_m=4, list=True)
     
     with open(os.path.join(ROUTES_DIR, "route.gpx"), 'w+') as f:
         f.write(gpx)
@@ -218,20 +140,19 @@ def receive_box_coordinates():
 
 @app.route('/start', methods=['POST'])
 def start_process():
-    try:
-        data = request.get_json()
-        print("Start event received:", data)
-        
-        return jsonify({"message": "Start event received"}), 200
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+     # Set the global environment variable
+    os.environ["archebot_start"] = "true"
 
-    
-
-
-
-
+    print("Start event received")
+    return jsonify({"message": "Start event received"}), 200
   
 # Start server on port 5000    
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    conn = get_db_connection()
+    # conn.execute('INSERT INTO shards (latitude, longitude, photo) VALUES (?, ?, ?)', 
+    #              (51.505, -0.09, 'hello.jpg'))
+    # conn.execute('DELETE FROM shards WHERE id <= 7')
+    # conn.execute('INSERT INTO locationlogs (timestamp, latitude, longitude) VALUES ("2025-03-13T14:10:00Z", 52.164936, 4.464488)')
+    conn.commit()
+    conn.close()
+    app.run(host='0.0.0.0', port=4000, debug=True)
