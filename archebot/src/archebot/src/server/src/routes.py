@@ -55,8 +55,6 @@ def get_location_log():
         print("Error fetching latest log:", e)
         return jsonify({"message": "Could not query database"}), 500
 
-
-
 @app.route('/logs', methods=['GET'])
 def get_logs():
     conn = get_db_connection()
@@ -149,10 +147,6 @@ def start_process():
 # Start server on port 5000    
 if __name__ == '__main__':
     conn = get_db_connection()
-    # conn.execute('INSERT INTO shards (latitude, longitude, photo) VALUES (?, ?, ?)', 
-    #              (51.505, -0.09, 'hello.jpg'))
-    # conn.execute('DELETE FROM shards WHERE id <= 7')
-    # conn.execute('INSERT INTO locationlogs (timestamp, latitude, longitude) VALUES ("2025-03-13T14:10:00Z", 52.164936, 4.464488)')
     conn.commit()
     conn.close()
     app.run(host='0.0.0.0', port=4000, debug=True)

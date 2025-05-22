@@ -16,9 +16,9 @@ def client():
     with app.test_client() as client:
         yield client
 
-def test_get_location_logs(client):
+def test_get_location_log(client):
     """Test retrieving location logs"""
-    response = client.get('/locationlogs')
+    response = client.get('/locationlog')
     assert response.status_code == 200
     data = response.get_json()
     assert isinstance(data, list)

@@ -31,7 +31,7 @@ def save_location(data) -> None:
     # Add _n for images with the same location/no location
     while os.path.exists(cwd + "/" + image_path_relative):
         filename = f"{data.longitude},{data.latitude}_{index}.jpg"
-        image_path_relative = f"server/src/static/{data.longitude},{data.latitude}_{index}.jpg"
+        image_path_relative = f"server/src/static/{filename}.jpg"
         index += 1
     
     full_path = f"{cwd}/{image_path_relative}"
