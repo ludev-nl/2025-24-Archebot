@@ -133,7 +133,9 @@ def receive_box_coordinates():
 
 @app.route('/start', methods=['POST'])
 def start_process():
-    # TODO: start drive script
+     # Set the global environment variable
+    os.environ["archebot_start"] = "true"
+
     print("Start event received")
     return jsonify({"message": "Start event received"}), 200
   
