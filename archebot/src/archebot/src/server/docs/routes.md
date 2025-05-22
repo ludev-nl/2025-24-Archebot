@@ -12,12 +12,12 @@ The API is hosted on the Leorover: `http://10.0.0.1:5000`
 
 ## Endpoints
 
-### 1. **Location Logs**
+### 1. **Location Log**
 
-#### **GET** `/locationlogs`
-- **Description:** Retrieve all location logs from the Leorover.
+#### **GET** `/locationlog`
+- **Description:** Retrieve last location log from the Leorover.
 - **Response:**
-    - **200 OK:** A list of location logs in the following format:
+    - **200 OK:** A location log in the following format:
     ```json
     [
       {

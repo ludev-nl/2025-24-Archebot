@@ -3,9 +3,10 @@ import { useEffect, useState, useRef } from "react";
 import "leaflet/dist/leaflet.css";
 import "@geoman-io/leaflet-geoman-free";
 import "@geoman-io/leaflet-geoman-free/dist/leaflet-geoman.css";
-import type { ShardInfo } from "@/app/page"
+import type { ShardInfo } from "@/app/page";
 
 const API_IMAGE_URL = process.env.NEXT_PUBLIC_API_BASE_URL + "/static/"
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 interface MapProps {
   onBoxChange: (box: {
@@ -19,6 +20,24 @@ interface MapProps {
 }
 
 const Map = ({ onBoxChange, path, shards}: MapProps) => {
+  const [latestLog, setLatestLog] = useState<L.LatLng>(); // State to hold the latest location log
+  
+    // Fetch the latest location log from the server
+    useEffect(() => {
+      fetch(`${API_BASE_URL}/locationlog`)
+        .then((res) => res.json())
+        .then((data) => {
+          console.log("Latest location log:", data);
+          const latestLog = data ? L.latLng(data.latitude, data.longitude) : undefined;
+          console.log("Latest after log:", latestLog);
+          setLatestLog(latestLog);
+        })
+        .catch((err) => {
+          console.error(err);
+        });
+    }, []);
+    console.log("latest log after loading:", latestLog);  
+  
   const [box, setBox] = useState<{
     southWest: L.LatLng | null;
     northEast: L.LatLng | null;
@@ -45,7 +64,9 @@ const Map = ({ onBoxChange, path, shards}: MapProps) => {
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
 
-    mapRef.current = L.map(mapContainerRef.current).setView([51.505, -0.09], 16);
+    console.log("Latest log in map componets:", latestLog);
+    if (!latestLog) return;
+    mapRef.current = L.map(mapContainerRef.current).setView(latestLog, 16);
 
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       attribution:
@@ -126,7 +147,7 @@ const Map = ({ onBoxChange, path, shards}: MapProps) => {
         mapRef.current = null;
       }
     };
-  }, [onBoxChange]);
+  }, [latestLog, onBoxChange]);
 
   useEffect(() => {
     if (!mapRef.current) return;

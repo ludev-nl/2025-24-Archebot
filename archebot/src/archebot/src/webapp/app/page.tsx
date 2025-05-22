@@ -1,11 +1,11 @@
 "use client"
-require('dotenv').config()
+require('dotenv').config();
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
-console.log("API_BASE_URL:", API_BASE_URL)
+console.log("API_BASE_URL:", API_BASE_URL);
 
-import { useState, useEffect } from "react"
-import dynamic from "next/dynamic"
-import { Button } from "@/components/ui/button"
+import { useState, useEffect } from "react";
+import dynamic from "next/dynamic";
+import { Button } from "@/components/ui/button";
 
 // Import the map component dynamically to avoid SSR issues with Leaflet
 const Map = dynamic(() => import("@/components/map"), {
@@ -16,6 +16,7 @@ const Map = dynamic(() => import("@/components/map"), {
     </div>
   ),
 })
+
 
 type Shard = {
   id: number;
@@ -28,9 +29,10 @@ export type ShardInfo = {
   lat: number;
   lng: number;
   image: string | null; // Use optional chaining to handle missing photo
-}
+};
 
 export default function Home() {
+
   // State to hold the box coordinates
   const [Box, setBox] = useState<{
     southWest: L.LatLng | null;
@@ -77,7 +79,6 @@ export default function Home() {
       fetch(`${API_BASE_URL}/shards`)
         .then((res) => res.json())
         .then((data) => {
-          console.log("Raw server response:", data);
           const simplifiedShards = data.map((shard: Shard) => ({
             lat: shard.latitude,
             lng: shard.longitude,
@@ -96,7 +97,6 @@ export default function Home() {
     const intervalId = setInterval(fetchShards, 10000)
     return () => clearInterval(intervalId)
   }, [])
-
 
 
   // Send a start event to the server when the button is clicked
@@ -123,42 +123,6 @@ export default function Home() {
         console.error("Failed to send start event:", err)
       })
   }
-  
-
-  // State to manage service worker registration status
-  const [serviceWorkerStatus, setServiceWorkerStatus] = useState<"loading" | "registered" | "failed">("loading")
-
-  // Register service worker for offline functionality
-  useEffect(() => {
-    // Only attempt to register service worker in production or when running locally
-    // Skip registration in preview environments
-    const isPreviewEnvironment = window.location.hostname.includes("vusercontent.net")
-
-    if ("serviceWorker" in navigator && !isPreviewEnvironment) {
-      setServiceWorkerStatus("loading")
-
-      // Use a try-catch block to handle potential errors
-      try {
-        navigator.serviceWorker
-          .register("/service-worker.js")
-          .then((registration) => {
-            console.log("Service Worker registered with scope:", registration.scope)
-            setServiceWorkerStatus("registered")
-          })
-          .catch((error) => {
-            console.error("Service Worker registration failed:", error)
-            setServiceWorkerStatus("failed")
-          })
-      } catch (error) {
-        console.error("Error during service worker registration:", error)
-        setServiceWorkerStatus("failed")
-      }
-    } else {
-      // If service workers aren't supported or we're in a preview environment
-      console.log("Service Workers not supported or skipped in preview environment")
-      setServiceWorkerStatus("failed")
-    }
-  }, [])
 
   return (
     <main className="container mx-auto py-8 px-4">
@@ -166,15 +130,6 @@ export default function Home() {
       <p className="mb-4 text-muted-foreground">
         Draw a rectangle on the map to get the latitude and longitude coordinates of the box and start the robot.
       </p>
-
-      {serviceWorkerStatus === "failed" && (
-        <div className="alert mb-4 p-4 bg-muted border rounded-md">
-          <p className="text-sm">
-            <strong>Note:</strong> Offline mode is limited in this preview environment. For full offline functionality,
-            deploy the application to a production environment.
-          </p>
-        </div>
-      )}
 
       {/* map with box */}
       <div className="space-y-6">
@@ -235,22 +190,6 @@ export default function Home() {
             )}
           </div>
         </div>
-
-        {/* Only show the tile manager if service worker is registered successfully */}
-
-        {serviceWorkerStatus === "failed" && (
-          <div className="card">
-            <div className="card-header">
-              <h2 className="card-title">Offline Functionality</h2>
-            </div>
-            <div className="card-content">
-              <p className="text-sm text-muted-foreground">
-                Full offline functionality is not available in this preview environment. The application will still
-                work, but requires an internet connection for map tiles.
-              </p>
-            </div>
-          </div>
-        )}
       </div>
     </main>
   )

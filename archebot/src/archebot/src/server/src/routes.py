@@ -40,15 +40,22 @@ def get_docs():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@app.route('/locationlogs', methods=['GET'])
-def get_location_logs():
+@app.route('/locationlog', methods=['GET'])
+def get_location_log():
     try:
         conn = get_db_connection()
-        logs = conn.execute('SELECT * FROM locationlogs').fetchall()
+        log = conn.execute('SELECT * FROM locationlogs ORDER BY id DESC LIMIT 1').fetchone()
         conn.close()
-        return jsonify([dict(log) for log in logs]), 200
-    except Exception:
-        return jsonify({"message":"Could not query database"}), 500
+
+        if log is None:
+            return jsonify({"message": "No logs found"}), 404
+
+        return jsonify(dict(log)), 200
+    except Exception as e:
+        print("Error fetching latest log:", e)
+        return jsonify({"message": "Could not query database"}), 500
+
+
 
 @app.route('/logs', methods=['GET'])
 def get_logs():
@@ -141,10 +148,11 @@ def start_process():
   
 # Start server on port 5000    
 if __name__ == '__main__':
-    # conn = get_db_connection()
-    # # conn.execute('INSERT INTO shards (latitude, longitude, photo) VALUES (?, ?, ?)', 
-    # #              (51.505, -0.09, 'hello.jpg'))
-    # # conn.execute('DELETE FROM shards WHERE id <= 7')
-    # conn.commit()
-    # conn.close()
+    conn = get_db_connection()
+    # conn.execute('INSERT INTO shards (latitude, longitude, photo) VALUES (?, ?, ?)', 
+    #              (51.505, -0.09, 'hello.jpg'))
+    # conn.execute('DELETE FROM shards WHERE id <= 7')
+    # conn.execute('INSERT INTO locationlogs (timestamp, latitude, longitude) VALUES ("2025-03-13T14:10:00Z", 52.164936, 4.464488)')
+    conn.commit()
+    conn.close()
     app.run(host='0.0.0.0', port=4000, debug=True)
