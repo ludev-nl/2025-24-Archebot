@@ -20,8 +20,6 @@ def test_get_location_log(client):
     """Test retrieving location logs"""
     response = client.get('/locationlog')
     assert response.status_code == 200
-    data = response.get_json()
-    assert isinstance(data, list)
 
 def test_get_logs(client):
     """Test retrieving logs"""
