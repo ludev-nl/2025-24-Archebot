@@ -15,16 +15,6 @@ const Map = dynamic(() => import("@/components/map"), {
   ),
 })
 
-// Import the offline tile manager component
-const OfflineTileManager = dynamic(() => import("@/components/offline-tile-manager"), {
-  ssr: false,
-})
-
-// Import the offline map notice component
-const OfflineMapNotice = dynamic(() => import("@/components/offline-map-notice"), {
-  ssr: false,
-})
-
 export default function Home() {
   // State to hold the box coordinates
   const [Box, setBox] = useState<{
@@ -39,8 +29,7 @@ export default function Home() {
     northWest: null,
   })
 
-  const [path, setPath] = useState([]);
-
+  const [path, setPath] = useState([]); // State to hold the path planning coordinates
 
   // send box coordinates to the server when all corners are set and receive path planning coordinates
   useEffect(() => {
@@ -65,6 +54,22 @@ export default function Home() {
         })
     }
   }, [Box])
+
+  const [shards, setShards] = useState([]); // State to hold the shards
+
+  useEffect(() => {
+    const fetchShards = () => {
+      fetch("http://localhost:4000/shards")
+        .then((res) => res.json())
+        .then((data) => setShards(data))
+        .catch((err) => console.error("Failed to fetch shards:", err))
+    }
+
+    fetchShards() // initial fetch
+    const intervalId = setInterval(fetchShards, 10000)
+
+    return () => clearInterval(intervalId)
+  }, [])
 
   // Send a start event to the server when the button is clicked
   const handleStart = () => {
@@ -143,8 +148,6 @@ export default function Home() {
         </div>
       )}
 
-      <OfflineMapNotice />
-
       {/* map with box */}
       <div className="space-y-6">
         <div className="card">
@@ -156,7 +159,7 @@ export default function Home() {
           </div>
           <div className="card-content">
             <div className="h-[600px] w-full rounded-md overflow-hidden border">
-              <Map onBoxChange={setBox} path={path}/>
+              <Map onBoxChange={setBox} path={path} shards={shards}/>
             </div>
           </div>
         </div>
@@ -206,7 +209,6 @@ export default function Home() {
         </div>
 
         {/* Only show the tile manager if service worker is registered successfully */}
-        {serviceWorkerStatus !== "failed" && <OfflineTileManager />}
 
         {serviceWorkerStatus === "failed" && (
           <div className="card">

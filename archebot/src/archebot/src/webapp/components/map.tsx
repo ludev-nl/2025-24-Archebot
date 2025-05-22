@@ -12,11 +12,11 @@ interface MapProps {
     northWest: L.LatLng | null;
   }) => void;
   path?: L.LatLngExpression[];
+  shards?: L.LatLng[];
 }
 
 
-
-const Map = ({ onBoxChange, path }: MapProps) => {
+const Map = ({ onBoxChange, path, shards}: MapProps) => {
   const [box, setBox] = useState<{
     southWest: L.LatLng | null;
     northEast: L.LatLng | null;
@@ -28,7 +28,6 @@ const Map = ({ onBoxChange, path }: MapProps) => {
     southEast: null,
     northWest: null,
   });
-  
   
 
   const boxRef = useRef(box); // ← store current box
@@ -175,6 +174,23 @@ const Map = ({ onBoxChange, path }: MapProps) => {
     setBox(newBox);
     onBoxChange(newBox);
   };
+
+  useEffect(() => {
+    if (!mapRef.current) return;
+
+    if (shards) {
+      shards.forEach((shard: L.LatLng) => {
+        const marker = L.marker(shard, {
+          icon: L.divIcon({
+            className: "custom-icon",
+            html: `<div class="custom-icon"></div>`,
+          }),
+        });
+        if (!mapRef.current) return;
+        marker.addTo(mapRef.current);
+      });
+    }
+  }, [shards]);
 
   const updateRotateBoxCoordinates = (layer: L.Rectangle, center: L.LatLng, degrees: number) => {
     
