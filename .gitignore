@@ -5,4 +5,5 @@ archebot/.catkin_*
 archebot/build
 archebot/logs
 archebot/devel
-CMakeLists.txt
+*.db
+*.gpx

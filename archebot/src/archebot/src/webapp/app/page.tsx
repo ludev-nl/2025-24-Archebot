@@ -2,9 +2,11 @@
 
 import { useState, useEffect } from "react"
 import dynamic from "next/dynamic"
+import { Button } from "@/components/ui/button"
+
 
 // Import the map component dynamically to avoid SSR issues with Leaflet
-const MapWithBoundingBox = dynamic(() => import("@/components/map-with-bounding-box"), {
+const Map = dynamic(() => import("@/components/map"), {
   ssr: false,
   loading: () => (
     <div className="h-[500px] w-full flex items-center justify-center bg-muted">
@@ -24,14 +26,68 @@ const OfflineMapNotice = dynamic(() => import("@/components/offline-map-notice")
 })
 
 export default function Home() {
-  const [boundingBox, setBoundingBox] = useState<{
+  // State to hold the box coordinates
+  const [Box, setBox] = useState<{
     southWest: { lat: number; lng: number } | null
     northEast: { lat: number; lng: number } | null
+    southEast: { lat: number; lng: number } | null
+    northWest: { lat: number; lng: number } | null
   }>({
     southWest: null,
     northEast: null,
+    southEast: null,
+    northWest: null,
   })
 
+  // send box coordinates to the server when all corners are set
+  useEffect(() => {
+    const allCornersSet = Box.northEast && Box.southWest && Box.northWest && Box.southEast
+  
+    if (allCornersSet) {
+      fetch("http://localhost:4000/box-coordinates", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(Box),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          console.log("Server response:", data)
+        })
+        .catch((err) => {
+          console.error("Failed to send box coordinates:", err)
+        })
+    }
+  }, [Box])
+
+  // Send a start event to the server when the button is clicked
+  const handleStart = () => {
+    const allCornersSet = Box.northEast && Box.southWest && Box.northWest && Box.southEast
+  
+    if (!allCornersSet) {
+      alert("Please draw a box on the map first.")
+      return
+    }
+  
+    fetch("http://localhost:4000/start", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ message: "start_clicked", box: Box }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        console.log("Start response:", data)
+      })
+      .catch((err) => {
+        console.error("Failed to send start event:", err)
+      })
+  }
+  
+
+  // State to manage service worker registration status
   const [serviceWorkerStatus, setServiceWorkerStatus] = useState<"loading" | "registered" | "failed">("loading")
 
   // Register service worker for offline functionality
@@ -68,9 +124,9 @@ export default function Home() {
 
   return (
     <main className="container mx-auto py-8 px-4">
-      <h1 className="text-3xl font-bold mb-6">Offline Geographic Bounding Box Selector</h1>
+      <h1 className="text-3xl font-bold mb-6"> Geographic map</h1>
       <p className="mb-4 text-muted-foreground">
-        Draw a rectangle on the map to get the latitude and longitude coordinates of the bounding box.
+        Draw a rectangle on the map to get the latitude and longitude coordinates of the box and start the robot.
       </p>
 
       {serviceWorkerStatus === "failed" && (
@@ -84,79 +140,82 @@ export default function Home() {
 
       <OfflineMapNotice />
 
-      <div className="grid gap-6 md:grid-cols-3">
-        <div className="md:col-span-2">
+      {/* map with box */}
+      <div className="space-y-6">
+        <div className="card">
+          <div className="card-header">
+            <h2 className="card-title">Interactive Map</h2>
+            <p className="card-description">
+              Click the rectangle icon in the top left of the map, then draw a box by clicking and dragging.
+            </p>
+          </div>
+          <div className="card-content">
+            <div className="h-[600px] w-full rounded-md overflow-hidden border">
+              <Map onBoxChange={setBox}/>
+            </div>
+          </div>
+        </div>
+
+        {/* Box Coordinates - now below the map */}
+        <div className="card">
+          <div className="card-header">
+            <h2 className="card-title">Box Coordinates</h2>
+            <p className="card-description">
+              The coordinates of your selected area will appear here, 
+              you can start the robot by clicking the start button
+            </p>
+          </div>
+          <div className="card-content">
+            {Box.southWest && Box.northEast && Box.southEast && Box.northWest ? (
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="text-left mt-6">
+                  <Button variant="outline" onClick={handleStart}>Start</Button>
+                </div>
+                <div>
+                  <h3 className="font-medium mb-1">Southwest Corner:</h3>
+                  <p className="text-sm">Latitude: {Box.southWest.lat.toFixed(6)}</p>
+                  <p className="text-sm">Longitude: {Box.southWest.lng.toFixed(6)}</p>
+                </div>
+                <div>
+                  <h3 className="font-medium mb-1">Northeast Corner:</h3>
+                  <p className="text-sm">Latitude: {Box.northEast.lat.toFixed(6)}</p>
+                  <p className="text-sm">Longitude: {Box.northEast.lng.toFixed(6)}</p>
+                </div>
+                <div>
+                  <h3 className="font-medium mb-1">Southeast Corner:</h3>
+                  <p className="text-sm">Latitude: {Box.southEast.lat.toFixed(6)}</p>
+                  <p className="text-sm">Longitude: {Box.southEast.lng.toFixed(6)}</p>
+                </div>
+                <div>
+                  <h3 className="font-medium mb-1">Northwest Corner:</h3>
+                  <p className="text-sm">Latitude: {Box.northWest.lat.toFixed(6)}</p>
+                  <p className="text-sm">Longitude: {Box.northWest.lng.toFixed(6)}</p>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <p>Draw a box on the map to see coordinates</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Only show the tile manager if service worker is registered successfully */}
+        {serviceWorkerStatus !== "failed" && <OfflineTileManager />}
+
+        {serviceWorkerStatus === "failed" && (
           <div className="card">
             <div className="card-header">
-              <h2 className="card-title">Interactive Map</h2>
-              <p className="card-description">
-                Click the rectangle icon in the top right of the map, then draw a box by clicking and dragging.
+              <h2 className="card-title">Offline Functionality</h2>
+            </div>
+            <div className="card-content">
+              <p className="text-sm text-muted-foreground">
+                Full offline functionality is not available in this preview environment. The application will still
+                work, but requires an internet connection for map tiles.
               </p>
             </div>
-            <div className="card-content">
-              <div className="h-[500px] w-full rounded-md overflow-hidden border">
-                <MapWithBoundingBox onBoundingBoxChange={setBoundingBox} />
-              </div>
-            </div>
           </div>
-        </div>
-
-        <div className="space-y-6">
-          <div className="card">
-            <div className="card-header">
-              <h2 className="card-title">Bounding Box Coordinates</h2>
-              <p className="card-description">The coordinates of your selected area will appear here</p>
-            </div>
-            <div className="card-content">
-              {boundingBox.southWest && boundingBox.northEast ? (
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="font-medium mb-1">Southwest Corner:</h3>
-                    <p className="text-sm">Latitude: {boundingBox.southWest.lat.toFixed(6)}</p>
-                    <p className="text-sm">Longitude: {boundingBox.southWest.lng.toFixed(6)}</p>
-                  </div>
-                  <div>
-                    <h3 className="font-medium mb-1">Northeast Corner:</h3>
-                    <p className="text-sm">Latitude: {boundingBox.northEast.lat.toFixed(6)}</p>
-                    <p className="text-sm">Longitude: {boundingBox.northEast.lng.toFixed(6)}</p>
-                  </div>
-                  <div className="pt-2 border-t">
-                    <h3 className="font-medium mb-1">For PostGIS Query:</h3>
-                    <div className="bg-muted p-2 rounded-md text-xs overflow-x-auto">
-                      <pre>
-                        {`ST_MakeBox2D(
-ST_Point(${boundingBox.southWest.lng.toFixed(6)}, ${boundingBox.southWest.lat.toFixed(6)}), 
-ST_Point(${boundingBox.northEast.lng.toFixed(6)}, ${boundingBox.northEast.lat.toFixed(6)})
-)`}
-                      </pre>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center py-8 text-muted-foreground">
-                  <p>Draw a box on the map to see coordinates</p>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Only show the tile manager if service worker is registered successfully */}
-          {serviceWorkerStatus !== "failed" && <OfflineTileManager />}
-
-          {serviceWorkerStatus === "failed" && (
-            <div className="card">
-              <div className="card-header">
-                <h2 className="card-title">Offline Functionality</h2>
-              </div>
-              <div className="card-content">
-                <p className="text-sm text-muted-foreground">
-                  Full offline functionality is not available in this preview environment. The application will still
-                  work, but requires an internet connection for map tiles.
-                </p>
-              </div>
-            </div>
-          )}
-        </div>
+        )}
       </div>
     </main>
   )
