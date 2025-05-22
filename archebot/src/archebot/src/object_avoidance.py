@@ -18,8 +18,12 @@ class Avoider:
         # 1: cut-off amount on the left, 
         # 2: absolute value is the cut-off on the right.
         self.view = [50,(195,-140)] 
+        self.view_width = 640-self.view[1][0]+self.view[1][1]
+        section_amount = 5
+        self.section_width = self.view_width//section_amount
+        self.view_sections = [(i * self.section_width, (i + 1) * self.section_width) for i in range(section_amount)] # the relative view sections
         self.publisher = rospy.Publisher("object_detection", String, queue_size=10)
-        self.counter = 0
+        self.counter = 0 
         self.object = False
 
 
@@ -31,6 +35,9 @@ class Avoider:
         """
         rows, cols = arr.shape
         blocks = cols // FILLIN
+
+        # make all zero's 65535 (uint16 max value) to handle small parts the camera cannot measure
+        arr[arr == 0] = 65535
 
         # make view (rows * blocks * FILLIN)
         reshaped = arr.reshape(rows, blocks, FILLIN)
@@ -57,20 +64,31 @@ class Avoider:
 
         # saves the array to a .npy binary and .png image
         # results can be found in ~/.ros/
-        # show = arr[:, 50:].copy()
-        # np.save("arr.npy", show)
-        # array_to_image("arr.png", show)
+        show = arr[:, 50:].copy()
+        np.save("arr.npy", show)
+        array_to_image("arr.png", show)
 
-        arr_view = arr[self.lowest_idx:self.highest_idx, 195:-140].copy()
-        self.median_filter(arr_view, 61)
-        if np.any(self.corrected[:, 195:-140] - arr_view > 0): # detect only exactly in front
+        arr_view = arr[self.lowest_idx:self.highest_idx, self.view[1][0]:self.view[1][1]].copy()
+        
+        self.median_filter(arr_view, self.section_width)
+        np.save("filtered_arr.npy", arr_view)
+        array_to_image("filtered_arr.png", arr_view)
+        if np.any(self.corrected[:, self.view[1][0]:self.view[1][1]] - arr_view > 0): # detect only exactly in front
             if not self.object:
                 self.publisher.publish("OBJECT")
                 self.object = True
+            # if left detects oject
+            if np.any(self.corrected[:, self.view[1][0]+self.view_sections[0][0]:self.view[1][0]+self.view_sections[0][1]] - arr_view[:,self.view_sections[0][0]:self.view_sections[0][1]]>0):
+                self.publisher.publish("OBJECT LEFT")
+                print("AAH object left")
+            elif np.any(self.corrected[:, self.view[1][0]+self.view_sections[4][0]:self.view[1][0]+self.view_sections[4][1]] - arr_view[:,self.view_sections[4][0]:self.view_sections[4][1]]>0):
+                self.publisher.publish("OBJECT RIGHT")
+                print("AAH object right")
         else:
             if self.object:
                 self.publisher.publish("NOBJECT")
                 self.object = False
+        
 
     def initialize(self, data):
         # so it only runs once
@@ -86,7 +104,10 @@ class Avoider:
         # get median of the row (the measurement of the distance of the lowest point on screen)
         median = np.median(arr[self.highest_idx])
         alpha = self.pixel_angle * (self.highest_idx-240)
+        print(alpha)
         B =  median/np.cos(alpha)
+        if B == 0:
+            print("Calibration failed, recalibrate!")
         angle = np.arccos(self.camera_height / B) # absolute angle to lowest point on camera that is used
         # angle to the middle of the camera
         angle_to_middle = angle + alpha # angle to a certain point + the relative angle to the middle
@@ -114,4 +135,5 @@ class Avoider:
 
         self.initialized = True
         print("avoider initialized")
+
 
