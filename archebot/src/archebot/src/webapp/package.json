@@ -15,6 +15,7 @@
     "@radix-ui/react-slot": "^1.2.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "dotenv": "^16.5.0",
     "leaflet": "^1.9.4",
     "leaflet-draw": "^1.0.4",
     "leaflet-draw-rotate": "^0.0.5",

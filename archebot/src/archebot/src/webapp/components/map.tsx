@@ -5,6 +5,8 @@ import "@geoman-io/leaflet-geoman-free";
 import "@geoman-io/leaflet-geoman-free/dist/leaflet-geoman.css";
 import type { ShardInfo } from "@/app/page"
 
+const API_IMAGE_URL = process.env.NEXT_PUBLIC_API_BASE_URL + "/static/"
+
 interface MapProps {
   onBoxChange: (box: {
     southWest: L.LatLng | null;
@@ -201,8 +203,18 @@ const Map = ({ onBoxChange, path, shards}: MapProps) => {
 
       if (!shard) return;
       const marker = L.marker(L.latLng(shard.lat, shard.lng), {
-        icon: L.icon({iconUrl: shard.image ? shard.image : ""})
+        icon: L.icon({
+          iconUrl: "/marker.png",
+          iconSize: [32, 32], // Width, Height in pixels
+          iconAnchor: [16, 16],
+        }),
       });
+
+      // Bind a popup with the image
+      if (shard.image) {
+        marker.bindPopup(`<img src="${API_IMAGE_URL + shard.image}" alt="shard" style="width: 150px;" />`);
+      }
+
       if (!mapRef.current) return;
 
       marker.addTo(mapRef.current);

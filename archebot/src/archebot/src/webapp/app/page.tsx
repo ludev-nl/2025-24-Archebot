@@ -1,9 +1,11 @@
 "use client"
+require('dotenv').config()
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+console.log("API_BASE_URL:", API_BASE_URL)
 
 import { useState, useEffect } from "react"
 import dynamic from "next/dynamic"
 import { Button } from "@/components/ui/button"
-
 
 // Import the map component dynamically to avoid SSR issues with Leaflet
 const Map = dynamic(() => import("@/components/map"), {
@@ -49,7 +51,7 @@ export default function Home() {
     const allCornersSet = Box.northEast && Box.southWest && Box.northWest && Box.southEast
     console.log("Box coordinates:", Box)
     if (allCornersSet) {
-      fetch("http://localhost:4000/box-coordinates", {
+      fetch(`${API_BASE_URL}/box-coordinates`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -72,7 +74,7 @@ export default function Home() {
   
   useEffect(() => {
     const fetchShards = () => {
-      fetch("http://localhost:4000/shards")
+      fetch(`${API_BASE_URL}/shards`)
         .then((res) => res.json())
         .then((data) => {
           console.log("Raw server response:", data);
@@ -106,7 +108,7 @@ export default function Home() {
       return
     }
   
-    fetch("http://localhost:4000/start", {
+    fetch(`${API_BASE_URL}/start`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
