@@ -1,7 +1,6 @@
 "use client"
 require('dotenv').config();
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
-console.log("API_BASE_URL:", API_BASE_URL);
 
 import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
@@ -74,6 +73,7 @@ export default function Home() {
 
   const [shards, setShards] = useState<ShardInfo[]>([]); // State to hold the shards
   
+  // Fetch shard locations from the server every 10 seconds
   useEffect(() => {
     const fetchShards = () => {
       fetch(`${API_BASE_URL}/shards`)
@@ -99,7 +99,7 @@ export default function Home() {
   }, [])
 
 
-  // Send a start event to the server when the button is clicked
+  // Send a start event to the server when the start button is clicked
   const handleStart = () => {
     const allCornersSet = Box.northEast && Box.southWest && Box.northWest && Box.southEast
   
@@ -123,7 +123,7 @@ export default function Home() {
         console.error("Failed to send start event:", err)
       })
   }
-
+  
   return (
     <main className="container mx-auto py-8 px-4">
       <h1 className="text-3xl font-bold mb-6"> Geographic map</h1>
@@ -147,7 +147,7 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Box Coordinates - now below the map */}
+        {/* Box Coordinates and start button below the map */}
         <div className="card">
           <div className="card-header">
             <h2 className="card-title">Box Coordinates</h2>

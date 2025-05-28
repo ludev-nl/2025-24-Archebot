@@ -19,6 +19,7 @@ interface MapProps {
   shards?: ShardInfo[];
 }
 
+// Map component to display the map and handle rectangle drawing
 const Map = ({ onBoxChange, path, shards}: MapProps) => {
   const [latestLog, setLatestLog] = useState<L.LatLng>(); // State to hold the latest location log
   
@@ -27,9 +28,7 @@ const Map = ({ onBoxChange, path, shards}: MapProps) => {
       fetch(`${API_BASE_URL}/locationlog`)
         .then((res) => res.json())
         .then((data) => {
-          console.log("Latest location log:", data);
           const latestLog = data ? L.latLng(data.latitude, data.longitude) : undefined;
-          console.log("Latest after log:", latestLog);
           setLatestLog(latestLog);
         })
         .catch((err) => {
@@ -38,6 +37,7 @@ const Map = ({ onBoxChange, path, shards}: MapProps) => {
     }, []);
     console.log("latest log after loading:", latestLog);  
   
+  // State to hold the box coordinates
   const [box, setBox] = useState<{
     southWest: L.LatLng | null;
     northEast: L.LatLng | null;
@@ -50,17 +50,20 @@ const Map = ({ onBoxChange, path, shards}: MapProps) => {
     northWest: null,
   });
   
-
-  const boxRef = useRef(box); // ← store current box
+  // Ref to store the current box state
+  const boxRef = useRef(box);
   useEffect(() => {
-    boxRef.current = box; // ← keep ref in sync
+    boxRef.current = box;
   }, [box]);
 
-  const mapRef = useRef<L.Map | null>(null);
-  const mapContainerRef = useRef<HTMLDivElement>(null);
-  const rectangleRef = useRef<L.Rectangle | null>(null);
-  const pathLineRef = useRef<L.Polyline | null>(null);
 
+  const mapRef = useRef<L.Map | null>(null); // Ref to store the Leaflet map instance
+  const mapContainerRef = useRef<HTMLDivElement>(null); // Ref to the map container element
+  const rectangleRef = useRef<L.Rectangle | null>(null); // Ref to store the rectangle layer
+  const pathLineRef = useRef<L.Polyline | null>(null); // Ref to store the route layer
+
+  // Function to handle box creation/changes with geomann and loading the map
+  // This effect runs when the map container is ready and the latest log is available
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
 
@@ -140,7 +143,7 @@ const Map = ({ onBoxChange, path, shards}: MapProps) => {
         });
       }
     });
-
+    
     return () => {
       if (mapRef.current) {
         mapRef.current.remove();
@@ -149,6 +152,7 @@ const Map = ({ onBoxChange, path, shards}: MapProps) => {
     };
   }, [latestLog, onBoxChange]);
 
+  // Effect to handle the route layer and update it when the path changes
   useEffect(() => {
     if (!mapRef.current) return;
 
@@ -167,8 +171,8 @@ const Map = ({ onBoxChange, path, shards}: MapProps) => {
       }).addTo(mapRef.current);
 
       // Disable all Geoman functionality
-      polyline.pm.disable();              // Disables edit + drag
-      polyline.pm.disableRotate();        // Prevent rotation
+      polyline.pm.disable();
+      polyline.pm.disableRotate();
 
       pathLineRef.current = polyline;
       pathLineRef.current.pm.setOptions({
@@ -183,21 +187,23 @@ const Map = ({ onBoxChange, path, shards}: MapProps) => {
     }
   }, [path]);
 
+  // Function to update the box coordinates when the rectangle is drawn or edited
   const updateBoxCoordinates = (layer: L.Rectangle) => {
     const corners = layer.getLatLngs() as L.LatLng[][];
 
     console.log("Corners:", corners);
     const newBox = {
-      northWest: corners[0][0], // Access the first element in the array for NW
-      southWest: corners[0][1], // Access the first element in the array for SW
-      southEast: corners[0][2], // Access the first element in the array for SE
-      northEast: corners[0][3], // Access the first element in the array for NE
+      northWest: corners[0][0],
+      southWest: corners[0][1],
+      southEast: corners[0][2],
+      northEast: corners[0][3],
     };
 
     setBox(newBox);
     onBoxChange(newBox);
   };
 
+  // Effect to handle the shards and add markers to the map
   useEffect(() => {
     console.log("shards state:", shards);
     if (!mapRef.current || !shards) return;
@@ -206,7 +212,6 @@ const Map = ({ onBoxChange, path, shards}: MapProps) => {
     
     console.log("Shards:", shards);
     shards.forEach((shard: ShardInfo) => {
-
       const shardLatLng = L.latLng(shard.lat, shard.lng);
       let exists = false;
 

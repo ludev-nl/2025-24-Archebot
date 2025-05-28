@@ -6,8 +6,8 @@ import { Inter } from "next/font/google"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Offline Geographic Box Selector",
-  description: "Draw a box on a map to get latitude and longitude coordinates - works offline!",
+  title: "Geographic Box Selector",
+  description: "Draw a box on a map to get latitude and longitude coordinates",
 }
 
 export default function RootLayout({
