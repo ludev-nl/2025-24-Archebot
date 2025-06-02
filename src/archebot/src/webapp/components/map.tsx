@@ -78,6 +78,7 @@ const Map = ({ onBoxChange, path, shards}: MapProps) => {
     onBoxChange(newBox);
   };
 
+  // Function to update the box coordinates when the rectangle is rotated
   const updateRotateBoxCoordinates = (layer: L.Rectangle) => {
     
     const rotationCenter = layer.pm.getRotationCenter();
@@ -105,6 +106,16 @@ const Map = ({ onBoxChange, path, shards}: MapProps) => {
     console.log("Latest log in map componets:", latestLog);
     if (!latestLog) return;
     mapRef.current = L.map(mapContainerRef.current).setView(latestLog, 16);
+
+    // Add rover marker at latestLog coordinates
+    const roverIcon = L.icon({
+      iconUrl: "/rover.png", // Adjust path based on your public/static folder
+      iconSize: [40, 40],    // Size of the icon
+      iconAnchor: [20, 20],  // Point of the icon which will correspond to marker's location
+    });
+
+    L.marker(latestLog, { icon: roverIcon }).addTo(mapRef.current).bindPopup("Rover Position");
+
 
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       attribution:
@@ -254,7 +265,12 @@ const Map = ({ onBoxChange, path, shards}: MapProps) => {
 
       // Bind a popup with the image
       if (shard.image) {
-        marker.bindPopup(`<img src="${API_IMAGE_URL + shard.image}" alt="shard" style="width: 150px;" />`);
+        marker.bindPopup(`
+          <div>
+            <img src="${API_IMAGE_URL + shard.image}" alt="shard" style="width: 150px;" />
+            <p>Coordinates: (${shard.lat.toFixed(5)}, ${shard.lng.toFixed(5)})</p>
+          </div>
+        `);
       }
 
       if (!mapRef.current) return;
