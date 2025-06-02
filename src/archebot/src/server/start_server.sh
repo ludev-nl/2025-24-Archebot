@@ -33,9 +33,13 @@ echo "Activating virtual environment..."
 source "$SCRIPT_DIR/venv/bin/activate"
 echo "Virtual environment activated."
 
+python3 -m pip install testresources
+python3 -m pip install setuptools==61.0
+python3 -m pip install wheel
+
 # Install dependencies
 echo "Installing dependencies..."
-pip install -r "$SCRIPT_DIR/../../../../../requirements.txt"
+pip install -r "$SCRIPT_DIR/../../../../requirements.txt"
 echo "Dependencies installed."
 
 # Initialize the database

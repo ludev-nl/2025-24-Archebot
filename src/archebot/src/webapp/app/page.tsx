@@ -1,5 +1,7 @@
 "use client"
-require('dotenv').config();
+// require('dotenv').config();
+import dotenv from "dotenv";
+dotenv.config();
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 import { useState, useEffect } from "react";

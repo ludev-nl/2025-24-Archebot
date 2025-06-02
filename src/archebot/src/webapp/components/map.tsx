@@ -62,6 +62,41 @@ const Map = ({ onBoxChange, path, shards}: MapProps) => {
   const rectangleRef = useRef<L.Rectangle | null>(null); // Ref to store the rectangle layer
   const pathLineRef = useRef<L.Polyline | null>(null); // Ref to store the route layer
 
+  // Function to update the box coordinates when the rectangle is drawn or edited
+  const updateBoxCoordinates = (layer: L.Rectangle) => {
+    const corners = layer.getLatLngs() as L.LatLng[][];
+
+    console.log("Corners:", corners);
+    const newBox = {
+      northWest: corners[0][0],
+      southWest: corners[0][1],
+      southEast: corners[0][2],
+      northEast: corners[0][3],
+    };
+
+    setBox(newBox);
+    onBoxChange(newBox);
+  };
+
+  const updateRotateBoxCoordinates = (layer: L.Rectangle) => {
+    
+    const rotationCenter = layer.pm.getRotationCenter();
+    const angle = layer.pm.getAngle();
+    layer.pm.setRotationCenter(rotationCenter);
+    layer.pm.rotateLayerToAngle(angle);
+    console.log("rotated shape:", layer.getLatLngs());
+    const corners = layer.getLatLngs() as L.LatLng[][];
+    const newBox = {
+      northWest: corners[0][0],
+      southWest: corners[0][1],
+      southEast: corners[0][2],
+      northEast: corners[0][3],
+    };
+
+    setBox(newBox);
+    onBoxChange(newBox);
+  }
+
   // Function to handle box creation/changes with geomann and loading the map
   // This effect runs when the map container is ready and the latest log is available
   useEffect(() => {
@@ -106,11 +141,8 @@ const Map = ({ onBoxChange, path, shards}: MapProps) => {
         rectangleRef.current.bringToFront();
 
 
-        layer.on("pm:rotateend", (e) => {
-          const angle = layer.pm.getAngle();
-          const center = layer.pm.getRotationCenter();
-          updateRotateBoxCoordinates(layer, center, angle);
-      
+        layer.on("pm:rotateend", () => {
+          updateRotateBoxCoordinates(layer);
         });
 
         layer.on("pm:edit pm:dragend", () => {
@@ -187,22 +219,6 @@ const Map = ({ onBoxChange, path, shards}: MapProps) => {
     }
   }, [path]);
 
-  // Function to update the box coordinates when the rectangle is drawn or edited
-  const updateBoxCoordinates = (layer: L.Rectangle) => {
-    const corners = layer.getLatLngs() as L.LatLng[][];
-
-    console.log("Corners:", corners);
-    const newBox = {
-      northWest: corners[0][0],
-      southWest: corners[0][1],
-      southEast: corners[0][2],
-      northEast: corners[0][3],
-    };
-
-    setBox(newBox);
-    onBoxChange(newBox);
-  };
-
   // Effect to handle the shards and add markers to the map
   useEffect(() => {
     console.log("shards state:", shards);
@@ -245,26 +261,7 @@ const Map = ({ onBoxChange, path, shards}: MapProps) => {
 
       marker.addTo(mapRef.current);
     });
-  }, [shards]);
-
-  const updateRotateBoxCoordinates = (layer: L.Rectangle, center: L.LatLng, degrees: number) => {
-    
-    const rotationCenter = layer.pm.getRotationCenter();
-    const angle = layer.pm.getAngle();
-    layer.pm.setRotationCenter(rotationCenter);
-    layer.pm.rotateLayerToAngle(angle);
-    console.log("rotated shape:", layer.getLatLngs());
-    const corners = layer.getLatLngs() as L.LatLng[][];
-    const newBox = {
-      northWest: corners[0][0],
-      southWest: corners[0][1],
-      southEast: corners[0][2],
-      northEast: corners[0][3],
-    };
-
-    setBox(newBox);
-    onBoxChange(newBox);
-  }
+  }, [shards])
 
   return (
     <div style={{ height: "100vh", width: "100%", position: "relative" }}>
