@@ -1,11 +1,11 @@
-roslibpy==1.7.0
-Flask==2.2.5
-Markdown==3.7
-marshmallow==3.22.0
-flask-cors==3.0.10
+roslibpy
+Flask
+Markdown
+marshmallow
+flask-cors
 geopy
 gpxpy
-numpy
+numpy==1.23
 opencv-python
 ultralytics
 pytest
