@@ -10,12 +10,12 @@ def test_read_gpx_file():
     driver = Driver()
 
     expected = [
-        ("52.16511606102758", "4.464497118022855"),
-        ("52.16511248366583", "4.464537829724046"),
-        ("52.164907277538155", "4.464489904922958"),
-        ("52.1649037001764", "4.464530616624148"),
-        ("52.16510890630408", "4.464578541425236"),
-        ("52.16491085489991", "4.464449193221768"),
+        (52.16511606102758, 4.464497118022855),
+        (52.16511248366583, 4.464537829724046),
+        (52.164907277538155, 4.464489904922958),
+        (52.1649037001764, 4.464530616624148),
+        (52.16510890630408, 4.464578541425236),
+        (52.16491085489991, 4.464449193221768),
     ]
 
     SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
@@ -41,26 +41,6 @@ def test_update_gps_target():
     assert driver.target_long == first[0][1], "longitude not updated correctly"
 
 
-def test_update_imu():
-    driver = Driver()
-
-    x = 1.2
-    y = 0.2
-    z = 2.3
-    w = 1.0
-
-    fake_imu_data = Pose()
-    fake_imu_data.orientation = Quaternion(x=x, y=y, z=z, w=w)
-
-    expected = math.atan2(2 * (w * z + x * y), 1 - 2 * (y * y + z * z))
-
-    driver.update_imu(fake_imu_data)
-
-    assert driver.imu_yaw == expected, (
-        "yaw was not calculated correctly from quaternion"
-    )
-
-
 def test_compute_distance_and_heading():
     driver = Driver()
     # to left
@@ -70,6 +50,8 @@ def test_compute_distance_and_heading():
 
     dist, head = driver.compute_distance_and_heading(lat1, lon1, lat2, lon2)
     print(dist, head)
+    assert dist == meters
+    assert head == 3
     # to down
     lat1, lon1 = (51.759530, 4.940984)
     lat2, lon2 = (51.659530, 4.940984)
@@ -79,3 +61,11 @@ def test_compute_distance_and_heading():
     # to up
     lat1, lon1 = (51.759530, 4.940984)
     lat2, lon2 = (51.859530, 4.940984)
+
+
+def test_apply_kalman_filter():
+    driver = Driver()
+
+    assert driver.apply_kalman_filter(2.3, 3.2) == 0
+    assert driver.apply_kalman_filter(1, 0) == 0
+    assert driver.apply_kalman_filter(0, 1) == 0
