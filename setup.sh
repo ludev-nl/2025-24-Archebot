@@ -6,12 +6,14 @@ set -e
 # Get the script's directory
 SCRIPT_DIR="$(dirname "$(readlink -f "$0")")"
 
+# Build rover
+cd "$SCRIPT_DIR"
+catkin build
+
 # Build server
 cd "$SCRIPT_DIR/src/archebot/src/server"
 ./setup.sh
 
-# Navigate to script directory
-cd "$SCRIPT_DIR/src/archebot/src/webapp"
-
 # Build webapp
+cd "$SCRIPT_DIR/src/archebot/src/webapp"
 pnpm build
