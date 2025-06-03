@@ -23,24 +23,9 @@ if [ "$DROP_DB" = true ]; then
     rm -f "$SCRIPT_DIR/db/database.db"
 fi
 
-# Check if virtual environment exists
-if [ ! -d "$SCRIPT_DIR/venv" ]; then
-    echo "Creating virtual environment..."
-    python3 -m venv "$SCRIPT_DIR/venv"
-fi
-
 echo "Activating virtual environment..."
 source "$SCRIPT_DIR/venv/bin/activate"
 echo "Virtual environment activated."
-
-python3 -m pip install testresources
-python3 -m pip install setuptools==61.0
-python3 -m pip install wheel
-
-# Install dependencies
-echo "Installing dependencies..."
-pip install -r "$SCRIPT_DIR/../../../../requirements.txt"
-echo "Dependencies installed."
 
 # Initialize the database
 echo "Initializing the database..."
