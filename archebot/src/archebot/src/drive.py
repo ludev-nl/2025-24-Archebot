@@ -73,6 +73,8 @@ class Driver:
                 print("Point at ({0},{1})".format(point.latitude, point.longitude))
                 self.coordinate_list.append((point.latitude, point.longitude))
 
+            # append first coordinate to the end of the list so the rover
+            # returns to the start after exploring all gps targets
             self.coordinate_list.append(self.coordinate_list[0])
             print(self.coordinate_list)
 

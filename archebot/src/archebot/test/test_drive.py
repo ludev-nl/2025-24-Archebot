@@ -33,9 +33,56 @@ def test_update_gps_target():
     # first read gpx file
     driver.read_gpx_file(GPX_PATH)
     # save the original coordinate list
-    first = driver.coordinate_list.copy()
+    old = driver.coordinate_list.copy()
     driver.update_gps_target()
+    assert driver.coordinate_list == old[1:], "coordinates were not updated correctly"
+    assert driver.target_lat == old[0][0], "latitude not updated correctly"
+    assert driver.target_long == old[0][1], "longitude not updated correctly"
 
-    assert driver.coordinate_list == first[1:], "coordinates were not updated correctly"
-    assert driver.target_lat == first[0][0], "latitude not updated correctly"
-    assert driver.target_long == first[0][1], "longitude not updated correctly"
+    old = driver.coordinate_list.copy()
+    driver.update_gps_target()
+    assert driver.coordinate_list == old[1:], "coordinates were not updated correctly"
+    assert driver.target_lat == old[0][0], "latitude not updated correctly"
+    assert driver.target_long == old[0][1], "longitude not updated correctly"
+
+    old = driver.coordinate_list.copy()
+    driver.update_gps_target()
+    assert driver.coordinate_list == old[1:], "coordinates were not updated correctly"
+    assert driver.target_lat == old[0][0], "latitude not updated correctly"
+    assert driver.target_long == old[0][1], "longitude not updated correctly"
+
+    old = driver.coordinate_list.copy()
+    driver.update_gps_target()
+    assert driver.coordinate_list == old[1:], "coordinates were not updated correctly"
+    assert driver.target_lat == old[0][0], "latitude not updated correctly"
+    assert driver.target_long == old[0][1], "longitude not updated correctly"
+
+    old = driver.coordinate_list.copy()
+    driver.update_gps_target()
+    assert driver.coordinate_list == old[1:], "coordinates were not updated correctly"
+    assert driver.target_lat == old[0][0], "latitude not updated correctly"
+    assert driver.target_long == old[0][1], "longitude not updated correctly"
+
+    old = driver.coordinate_list.copy()
+    driver.update_gps_target()
+    assert driver.coordinate_list == old[1:], "coordinates were not updated correctly"
+    assert driver.target_lat == old[0][0], "latitude not updated correctly"
+    assert driver.target_long == old[0][1], "longitude not updated correctly"
+
+    old = driver.coordinate_list.copy()
+    driver.update_gps_target()
+    assert driver.coordinate_list == old[1:], "coordinates were not updated correctly"
+    assert driver.target_lat == old[0][0], "latitude not updated correctly"
+    assert driver.target_long == old[0][1], "longitude not updated correctly"
+
+    old = driver.coordinate_list.copy()
+    driver.update_gps_target()
+    assert driver.coordinate_list == old[1:], "coordinates were not updated correctly"
+    assert driver.target_lat == old[0][0], "latitude not updated correctly"
+    assert driver.target_long == old[0][1], "longitude not updated correctly"
+
+    old = driver.coordinate_list.copy()
+    driver.update_gps_target()
+    assert driver.coordinate_list == old[1:], "coordinates were not updated correctly"
+    assert driver.target_lat == old[0][0], "latitude not updated correctly"
+    assert driver.target_long == old[0][1], "longitude not updated correctly"
