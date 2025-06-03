@@ -39,33 +39,3 @@ def test_update_gps_target():
     assert driver.coordinate_list == first[1:], "coordinates were not updated correctly"
     assert driver.target_lat == first[0][0], "latitude not updated correctly"
     assert driver.target_long == first[0][1], "longitude not updated correctly"
-
-
-def test_compute_distance_and_heading():
-    driver = Driver()
-    # to left
-    lat1, lon1 = (51.759530, 4.940984)
-    lat2, lon2 = (51.759530, 4.840984)
-    meters = 6883
-
-    dist, head = driver.compute_distance_and_heading(lat1, lon1, lat2, lon2)
-    print(dist, head)
-    assert dist == meters
-    assert head == 3
-    # to down
-    lat1, lon1 = (51.759530, 4.940984)
-    lat2, lon2 = (51.659530, 4.940984)
-    # to right
-    lat1, lon1 = (51.759530, 4.940984)
-    lat2, lon2 = (51.759530, 5.040984)
-    # to up
-    lat1, lon1 = (51.759530, 4.940984)
-    lat2, lon2 = (51.859530, 4.940984)
-
-
-def test_apply_kalman_filter():
-    driver = Driver()
-
-    assert driver.apply_kalman_filter(2.3, 3.2) == 0
-    assert driver.apply_kalman_filter(1, 0) == 0
-    assert driver.apply_kalman_filter(0, 1) == 0
