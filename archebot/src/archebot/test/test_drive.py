@@ -1,6 +1,7 @@
 import math
 import os
 
+import pytest
 from geometry_msgs.msg import Pose, Quaternion
 
 from src.drive import Driver
@@ -69,20 +70,10 @@ def test_update_gps_target():
     assert driver.target_lat == old[0][0], "latitude not updated correctly"
     assert driver.target_long == old[0][1], "longitude not updated correctly"
 
+    # last target should exit the code with code 0
     old = driver.coordinate_list.copy()
-    driver.update_gps_target()
-    assert driver.coordinate_list == old[1:], "coordinates were not updated correctly"
-    assert driver.target_lat == old[0][0], "latitude not updated correctly"
-    assert driver.target_long == old[0][1], "longitude not updated correctly"
+    with pytest.raises(SystemExit) as wrapped_error:
+        driver.update_gps_target()
 
-    old = driver.coordinate_list.copy()
-    driver.update_gps_target()
-    assert driver.coordinate_list == old[1:], "coordinates were not updated correctly"
-    assert driver.target_lat == old[0][0], "latitude not updated correctly"
-    assert driver.target_long == old[0][1], "longitude not updated correctly"
-
-    old = driver.coordinate_list.copy()
-    driver.update_gps_target()
-    assert driver.coordinate_list == old[1:], "coordinates were not updated correctly"
-    assert driver.target_lat == old[0][0], "latitude not updated correctly"
-    assert driver.target_long == old[0][1], "longitude not updated correctly"
+    assert wrapped_error.type == SystemExit
+    assert wrapped_error.value.code == 0
