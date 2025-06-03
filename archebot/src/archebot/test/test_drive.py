@@ -1,3 +1,7 @@
+import math
+
+from geometry_msgs.msg import Pose, Quaternion
+
 from src.drive import Driver
 
 
@@ -31,3 +35,23 @@ def test_update_gps_target():
     assert driver.coordinate_list == first[1:], "coordinates were not updated correctly"
     assert driver.target_lat == first[0][0], "latitude not updated correctly"
     assert driver.target_long == first[0][1], "longitude not updated correctly"
+
+
+def test_update_imu():
+    driver = Driver()
+
+    x = 1.2
+    y = 0.2
+    z = 2.3
+    w = 1.0
+
+    fake_imu_data = Pose()
+    fake_imu_data.orientation = Quaternion(x=x, y=y, z=z, w=w)
+
+    expected = math.atan2(2 * (w * z + x * y), 1 - 2 * (x * x + y * y))
+
+    driver.update_imu(fake_imu_data)
+
+    assert driver.imu_yaw == expected, (
+        "yaw was not calculated correctly from quaternion"
+    )
