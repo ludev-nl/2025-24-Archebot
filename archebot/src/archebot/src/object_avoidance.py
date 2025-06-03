@@ -121,10 +121,12 @@ class Avoider:
         # numpy array of data
         arr = cam_to_array(data)
 
+        higher_than_684 = np.where(arr[:, 320] >= 684)
+        if len(higher_than_684[0]) == 0:
+            print("NO CALLIBRATION POINT FOUND POSSIBLY TOO CLOSE TO OBJECT IN FRONT")
+            exit(2)
         # angle of first pixel above 684
-        self.highest_idx = np.max(
-            np.where(arr[:, 320] >= 684)
-        )  # lowest point on screen from camera
+        self.highest_idx = np.max(higher_than_684)  # lowest point on screen from camera
         self.lowest_idx = max(
             self.highest_idx - self.view[0], 0
         )  # prevent index going in the negative # highest point on screen from camera
@@ -172,4 +174,3 @@ class Avoider:
 
         self.initialized = True
         print("avoider initialized")
-

@@ -37,19 +37,21 @@ class Driver:
         self.next_heading_update = 0
 
         self.coordinate_list = []
-        self.target_lat = 52.1648735
-        self.target_long = 4.4645245
+        self.target_lat = 52.164944
+        self.target_long = 4.464528
         self.MIN_DIST_FOR_HEADING = 0.5
 
-        self.cmd_pub = rospy.Publisher("cmd_vel", Twist, queue_size=1)
+        self.cmd_pub = rospy.Publisher("cmd_vel", Twist, queue_size=0)
         self.first_time = True
 
-        self.follow_path = True
-        self.join_at = 0
         self.rightdoor = 0
+        self.heading_timer = -1
+        self.is_updating_heading = False
+        self.heading_error = 0
+        self.target_yaw = 0
 
-        rospy.Subscriber("/gps", NavSatFix, self.update_gps)
-        rospy.Subscriber("/imu", Imu, self.update_imu)
+        # rospy.Subscriber("/gps", NavSatFix, self.update_gps)
+        # rospy.Subscriber("/imu", Imu, self.update_imu)
         rospy.Subscriber("/object_detection", UInt8, self.update_object)
         rospy.Timer(rospy.Duration(0.1), self.drive)
 
@@ -59,19 +61,26 @@ class Driver:
         """
         Get the gps coordinates from the gpx file and make a list of those coordinates.
         """
+        if len(self.coordinate_list) != 0:
+            print("ALREADY INITIALIZED")
+            return
+
+        SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
+        GPX_PATH = os.path.join(SCRIPT_DIR, "server/db/routes", "route.gpx")
         try:
-            SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
-            GPX_PATH = os.path.join(SCRIPT_DIR, "server/db/routes", "route.gpx")
             with open(GPX_PATH, "r") as gpx_file:
                 gpx = gpxpy.parse(gpx_file)
-
+            print("iets")
             for point in gpx.tracks[0].segments[0].points:
                 print("Point at ({0},{1})".format(point.latitude, point.longitude))
                 self.coordinate_list.append((point.latitude, point.longitude))
 
+            self.coordinate_list.append(self.coordinate_list[0])
+            print(self.coordinate_list)
+
             self.update_gps_target()
 
-        except:
+        except FileNotFoundError as _:
             print(f"File not found: {GPX_PATH}")
             sys.exit(1)
 
@@ -79,6 +88,9 @@ class Driver:
         """
         update target coordinates and remove first coordinate_list entry
         """
+        if len(self.coordinate_list) == 0:
+            print("byebye")
+            sys.exit(0)
         self.target_lat, self.target_long = self.coordinate_list.pop(0)
         # print("NEW TARGET: ")
         # print(self.target_lat, self.target_long)
@@ -106,8 +118,12 @@ class Driver:
         long_to_m = 40075000 * math.cos(math.radians(lat1)) / 360
         dx = (lon2 - lon1) * long_to_m
         dy = (lat2 - lat1) * lat_to_m
-        distance = math.hypot(dx, dy)
-        heading = math.atan2(dy, dx)
+        distance = math.hypot(dx, dy)  # DEZE KLOPT
+        # heading = math.atan2(dy, dx)
+        heading = self.gps_heading(lat1, lon1, lat2, lon2)
+        # print("DISTANCE, HEADING:", distance, math.degrees(heading))
+        # GPS IS REALLY INACCURATE
+        # HEADING MOET ANDERS GECALULEERD WORDEN
         return distance, heading
 
     def gps_heading(self, lat1, lon1, lat2, lon2):
@@ -120,7 +136,12 @@ class Driver:
             lat2_rad
         ) * math.cos(delta_lon)
 
-        heading = math.atan2(x, y)
+        heading = math.atan2(x, y) + math.pi
+        print("GPS HEADING:", math.degrees(heading))
+        if heading > math.pi:
+            heading -= 2 * math.pi
+        elif heading < -math.pi:
+            heading += 2 * math.pi
         return heading
 
     def apply_kalman_filter(self, gps_head, imu_head):
@@ -159,12 +180,6 @@ class Driver:
         return linear_x, angular_z
 
     def update_heading(self):
-        distance_to_target, target_heading = self.compute_distance_and_heading(
-            self.lat, self.long, self.target_lat, self.target_long
-        )
-        if time.time() < self.next_heading_update:
-            return distance_to_target, target_heading
-
         print("UPDATING HEADING")
 
         self.next_heading_update = time.time() + 2
@@ -190,86 +205,176 @@ class Driver:
         else:
             self.current_heading = self.imu_yaw
 
-        return distance_to_target, target_heading
+        # heading_error = math.atan2(
+        #     math.sin(self.target_heading - self.current_heading),
+        #     math.cos(self.target_heading - self.current_heading),
+        # )  # hier
+
+        heading_error = self.target_heading - self.current_heading
+
+        heading_error -= math.pi
+        if heading_error > math.pi:
+            heading_error -= 2 * math.pi
+        elif heading_error < -math.pi:
+            heading_error += 2 * math.pi
+
+        rospy.loginfo(
+            f"[DRIVER] Dist: {self.distance_to_target:.2f}m | Heading Err: {math.degrees(heading_error):.2f}"
+        )
+
+        self.target_yaw = self.imu_yaw + heading_error
+        if self.target_yaw > math.pi:
+            self.target_yaw -= 2 * math.pi
+        elif self.target_yaw < -math.pi:
+            self.target_yaw += 2 * math.pi
+
+        return heading_error
+
+        # rospy.loginfo(
+        #     f"[DRIVER] Dist: {distance_to_target:.2f}m | Heading Err: {math.degrees(heading_error):.2f} | Lin: {linear_x:.2f} | Ang: {angular_z:.2f}"
+        # )
+
+        # linear_x, angular_z = self.pid_control(distance_to_target, heading_error, dt)
+
+    def avoid(self, twist):
+        """
+        check if object too close to robot in front and updates twist accordingly
+        """
+        if self.object == Object.NOBJECT:
+            twist.linear.x = 0.4
+            # twist.linear.x = 0  # hier
+            twist.angular.z = 0
+            self.rightdoor = 0
+            return False
+        elif self.rightdoor > 2:
+            twist.linear.x = 0.0
+            twist.angular.z = -0.4
+        elif self.object == Object.LEFT:
+            if self.prev_object == Object.RIGHT:
+                self.rightdoor += 1
+            twist.linear.x = 0.0
+            twist.angular.z = -0.4
+        # elif self.object == Object.RIGHT:
+        else:
+            if self.prev_object == Object.LEFT:
+                self.rightdoor += 1
+            twist.linear.x = 0.0
+            twist.angular.z = 0.4
+
+        return True
+
+    def start_heading_timer(self) -> None:
+        self.previous_long = self.long
+        self.previous_lat = self.lat
+        self.heading_timer = 2
+
+    def stop_heading_timer(self) -> None:
+        self.heading_timer = -1
+
+    def update_heading_timer(self, dt) -> None:
+        if self.heading_timer == -1:
+            return
+
+        self.heading_timer = max(self.heading_timer - dt, 0)
+
+    def rotate(self) -> float:
+        # print("is rotating")
+        # print(self.imu_yaw)
+        # print(self.target_yaw)
+        # print(self.target_yaw - self.imu_yaw)
+        # print("ENDYAWS")
+
+        if abs(self.imu_yaw - self.target_yaw) < (math.pi / 180 * 5):
+            print("END ROTATE")
+            self.is_updating_heading = False
+            self.start_heading_timer()
+            return 0
+
+        diff = self.target_yaw - self.imu_yaw
+        angular_z = (
+            0.2 if ((diff + math.pi) % (2 * math.pi) - math.pi) > 0 else -0.2
+        )  # hier
+
+        return angular_z
 
     def drive(self, _):
+        # print(self.target_lat)
+        # print(self.target_long)
+        # check archebot_start flag
         if os.environ.get("archebot_start") != "true":
             return
         if self.first_time:
-            self.read_gpx_file()
             self.first_time = False
+            print("DIT MOET MAAR EEN KEER")
+            self.read_gpx_file()
 
-        twist = Twist()
-
+        # update dt time
         now = time.time()
         dt = now - self.last_time if self.last_time else 0.1
         self.last_time = now
 
-        distance_to_target, target_heading = self.update_heading()
+        # init twist
+        twist = Twist()
+        # keep updating heading until heading error becomes zero
+        if self.is_updating_heading:
+            # update rotation depending on the heading error
+            angular_z = self.rotate()
 
-        heading_error = math.atan2(
-            math.sin(target_heading - self.current_heading),
-            math.cos(target_heading - self.current_heading),
+            twist.angular.z = angular_z
+            self.cmd_pub.publish(twist)
+            return
+
+        # update target heading and distance
+        self.distance_to_target, self.target_heading = (
+            self.compute_distance_and_heading(
+                self.lat, self.long, self.target_lat, self.target_long
+            )
         )
 
-        linear_x, angular_z = self.pid_control(distance_to_target, heading_error, dt)
-
-        if distance_to_target < 0.5:
-            # print("TARGET REACHED")
-            linear_x = 0.0
-            angular_z = 0.0
+        # check if already at target
+        if self.distance_to_target < 0.5:
+            print("TARGET REACHED")
             self.update_gps_target()
+            return
 
-        twist.linear.x = linear_x
-        twist.angular.z = angular_z
+        self.update_heading_timer(dt)
 
-        rospy.loginfo(
-            f"[DRIVER] Dist: {distance_to_target:.2f}m | Heading Err: {math.degrees(heading_error):.2f} | Lin: {linear_x:.2f} | Ang: {angular_z:.2f}"
-        )
-
-        # check if object too close to robot in front
-        if self.follow_path:
-            if self.object == Object.LEFT:
-                twist.linear.x = 0.0
-                twist.angular.z = -0.4
-                self.leave_path()
-            elif self.object == Object.RIGHT:
-                twist.linear.x = 0.0
-                twist.angular.z = 0.4
-                self.leave_path()
-            else:
-                pass
-        else:
-            if self.object == Object.NOBJECT:
-                twist.linear.x = 0.4
-                twist.angular.z = 0
-                if time.time() > self.join_at:
-                    self.follow_path = True
-                self.rightdoor = 0
-            elif self.rightdoor > 2:
-                twist.linear.x = 0.0
-                twist.angular.x = -0.4
-                self.leave_path()
-            elif self.object == Object.LEFT:
-                if self.prev_object == Object.RIGHT:
-                    self.rightdoor += 1
-                twist.linear.x = 0.0
-                twist.angular.z = -0.4
-                self.leave_path()
-            # elif self.object == Object.RIGHT:
-            else:
-                if self.prev_object == Object.LEFT:
-                    self.rightdoor += 1
-                twist.linear.x = 0.0
-                twist.angular.z = 0.4
-                self.leave_path()
-
-        print(self.object)
-
+        # check if object was avoided
+        avoided = self.avoid(twist)
+        # print(self.object)
         self.prev_object = self.object
 
-        self.cmd_pub.publish(twist)
+        # if object was avoided return early
+        if avoided:
+            self.stop_heading_timer()
+            self.cmd_pub.publish(twist)
+            return
 
-    def leave_path(self) -> None:
-        self.follow_path = False
-        self.join_at = time.time() + 5
+        # if heading timer is off start the timer
+        if self.heading_timer == -1:
+            print("start timer")
+            self.start_heading_timer()
+            self.cmd_pub.publish(twist)
+            return
+        # don't update heading if timer is not zero
+        elif self.heading_timer != 0:
+            # print("TIMER:", self.heading_timer)
+            self.cmd_pub.publish(twist)
+            return
+
+        # update rotation depending on the heading error
+        self.heading_error = self.update_heading()
+
+        # print("ERROR: ")
+        # print(self.heading_error)
+        # print("HEADING_CURR: ")
+        # print(self.current_heading)
+
+        if abs(self.heading_error) > 0.18:
+            print("START ROTATE")
+            self.stop_heading_timer()
+            self.is_updating_heading = True
+            return
+
+        self.start_heading_timer()
+        self.cmd_pub.publish(twist)
