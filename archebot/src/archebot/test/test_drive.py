@@ -17,3 +17,17 @@ def test_read_gpx_file():
     driver.read_gpx_file()
 
     assert expected == driver.coordinate_list, "coordinates were not read correctly"
+
+
+def test_update_gps_target():
+    driver = Driver()
+
+    # first read gpx file
+    driver.read_gpx_file()
+    # save the original coordinate list
+    first = driver.coordinate_list
+    driver.update_gps_target()
+
+    assert driver.coordinate_list == first[1:], "coordinates were not updated correctly"
+    assert driver.target_lat == first[0][0], "latitude not updated correctly"
+    assert driver.target_long == first[0][1], "longitude not updated correctly"
