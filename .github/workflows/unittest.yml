@@ -6,7 +6,6 @@ on:
       - main
       - dev
       - workflows
-      - oa-tests
 
 jobs:
   test:
