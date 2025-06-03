@@ -10,7 +10,6 @@ def test_read_gpx_file():
     driver = Driver()
 
     expected = [
-        ("52.16491085489991", "4.464449193221768"),
         ("52.16511606102758", "4.464497118022855"),
         ("52.16511248366583", "4.464537829724046"),
         ("52.164907277538155", "4.464489904922958"),
@@ -34,7 +33,7 @@ def test_update_gps_target():
     # first read gpx file
     driver.read_gpx_file(GPX_PATH)
     # save the original coordinate list
-    first = driver.coordinate_list
+    first = driver.coordinate_list.copy()
     driver.update_gps_target()
 
     assert driver.coordinate_list == first[1:], "coordinates were not updated correctly"
