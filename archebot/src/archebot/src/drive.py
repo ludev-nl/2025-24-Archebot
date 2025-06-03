@@ -57,7 +57,7 @@ class Driver:
 
         print("Driver initialized")
 
-    def read_gpx_file(self):
+    def read_gpx_file(self, gpx_path):
         """
         Get the gps coordinates from the gpx file and make a list of those coordinates.
         """
@@ -65,10 +65,8 @@ class Driver:
             print("ALREADY INITIALIZED")
             return
 
-        SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
-        GPX_PATH = os.path.join(SCRIPT_DIR, "server/db/routes", "route.gpx")
         try:
-            with open(GPX_PATH, "r") as gpx_file:
+            with open(gpx_path, "r") as gpx_file:
                 gpx = gpxpy.parse(gpx_file)
             print("iets")
             for point in gpx.tracks[0].segments[0].points:
@@ -81,7 +79,7 @@ class Driver:
             self.update_gps_target()
 
         except FileNotFoundError as _:
-            print(f"File not found: {GPX_PATH}")
+            print(f"File not found: {gpx_path}")
             sys.exit(1)
 
     def update_gps_target(self):
@@ -306,7 +304,9 @@ class Driver:
         if self.first_time:
             self.first_time = False
             print("DIT MOET MAAR EEN KEER")
-            self.read_gpx_file()
+            SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
+            GPX_PATH = os.path.join(SCRIPT_DIR, "server/db/routes", "route.gpx")
+            self.read_gpx_file(GPX_PATH)
 
         # update dt time
         now = time.time()

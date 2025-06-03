@@ -1,4 +1,5 @@
 import math
+import os
 
 from geometry_msgs.msg import Pose, Quaternion
 
@@ -18,7 +19,9 @@ def test_read_gpx_file():
         ("52.16491085489991", "4.464449193221768"),
     ]
 
-    driver.read_gpx_file()
+    SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
+    GPX_PATH = os.path.join(SCRIPT_DIR, "route.gpx")
+    driver.read_gpx_file(GPX_PATH)
 
     assert expected == driver.coordinate_list, "coordinates were not read correctly"
 
@@ -26,8 +29,10 @@ def test_read_gpx_file():
 def test_update_gps_target():
     driver = Driver()
 
+    SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
+    GPX_PATH = os.path.join(SCRIPT_DIR, "route.gpx")
     # first read gpx file
-    driver.read_gpx_file()
+    driver.read_gpx_file(GPX_PATH)
     # save the original coordinate list
     first = driver.coordinate_list
     driver.update_gps_target()
@@ -48,10 +53,30 @@ def test_update_imu():
     fake_imu_data = Pose()
     fake_imu_data.orientation = Quaternion(x=x, y=y, z=z, w=w)
 
-    expected = math.atan2(2 * (w * z + x * y), 1 - 2 * (x * x + y * y))
+    expected = math.atan2(2 * (w * z + x * y), 1 - 2 * (y * y + z * z))
 
     driver.update_imu(fake_imu_data)
 
     assert driver.imu_yaw == expected, (
         "yaw was not calculated correctly from quaternion"
     )
+
+
+def test_compute_distance_and_heading():
+    driver = Driver()
+    # to left
+    lat1, lon1 = (51.759530, 4.940984)
+    lat2, lon2 = (51.759530, 4.840984)
+    meters = 6883
+
+    dist, head = driver.compute_distance_and_heading(lat1, lon1, lat2, lon2)
+    print(dist, head)
+    # to down
+    lat1, lon1 = (51.759530, 4.940984)
+    lat2, lon2 = (51.659530, 4.940984)
+    # to right
+    lat1, lon1 = (51.759530, 4.940984)
+    lat2, lon2 = (51.759530, 5.040984)
+    # to up
+    lat1, lon1 = (51.759530, 4.940984)
+    lat2, lon2 = (51.859530, 4.940984)

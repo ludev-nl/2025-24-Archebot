@@ -6,4 +6,3 @@ archebot/build
 archebot/logs
 archebot/devel
 *.db
-*.gpx
