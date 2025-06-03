@@ -119,11 +119,10 @@ class Driver:
         dx = (lon2 - lon1) * long_to_m
         dy = (lat2 - lat1) * lat_to_m
         distance = math.hypot(dx, dy)  # DEZE KLOPT
-        # heading = math.atan2(dy, dx)
+        # heading = math.atan2(dy, dx) # THIS HEADING HAS TO BE CALCULATED DIFFERENTLY
         heading = self.gps_heading(lat1, lon1, lat2, lon2)
         # print("DISTANCE, HEADING:", distance, math.degrees(heading))
         # GPS IS REALLY INACCURATE
-        # HEADING MOET ANDERS GECALULEERD WORDEN
         return distance, heading
 
     def gps_heading(self, lat1, lon1, lat2, lon2):
@@ -136,6 +135,7 @@ class Driver:
             lat2_rad
         ) * math.cos(delta_lon)
 
+        # HEADING IS POINTING OPPOSITE DIRECTION FOR SOME REASON SOMEONE CHANGE THIS IT SHOULD NOT BE THE CASE (thats why + pi)
         heading = math.atan2(x, y) + math.pi
         print("GPS HEADING:", math.degrees(heading))
         if heading > math.pi:
