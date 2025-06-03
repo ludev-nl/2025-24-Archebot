@@ -63,7 +63,6 @@ class Avoider:
             self.lowest_idx : self.highest_idx, self.view[1][0] : self.view[1][1]
         ].copy()
 
-        # self.median_filter(arr_view, self.section_width)
         # make all zero's 65535 (uint16 max value) to handle small parts the camera cannot measure
         arr_view[arr_view == 0] = 65535
 
