@@ -1,3 +1,4 @@
+import collections
 import math
 import os
 import sys
@@ -5,17 +6,20 @@ import time
 
 import gpxpy
 import gpxpy.gpx
+import numpy as np
 import rospy
+from enums import Object
+from geographiclib.geodesic import Geodesic
 from geometry_msgs.msg import Twist
 from sensor_msgs.msg import Imu, NavSatFix
 from std_msgs.msg import String, UInt8
 from tf.transformations import euler_from_quaternion
 
-from enums import Object
-
 
 class Driver:
     def __init__(self):
+        self.lat_deque = collections.deque(maxlen=5)
+        self.long_deque = collections.deque(maxlen=5)
         self.lat = 0.0
         self.long = 0.0
         self.imu_yaw = 0.0
@@ -40,6 +44,7 @@ class Driver:
         self.target_lat = 52.164944
         self.target_long = 4.464528
         self.MIN_DIST_FOR_HEADING = 0.5
+        self.MIN_DIST_FOR_TARGET = 1.5
 
         self.cmd_pub = rospy.Publisher("cmd_vel", Twist, queue_size=0)
         self.first_time = True
@@ -99,8 +104,26 @@ class Driver:
         self.object = Object(data.data)
 
     def update_gps(self, data):
-        self.lat = data.latitude
-        self.long = data.longitude
+        # discard gps data if no signal
+        if data.status.status == -1:
+            print("NO SIGNAL")
+            return
+        # discard gps data if uncertainty is above 10 meters
+        elif (
+            max(
+                abs(data.position_covariance[0] ** 0.5),
+                abs(data.position_covariance[4] ** 0.5),
+            )
+            > 2
+        ):
+            print("TOO HIGH UNCERTAINTY")
+            return
+
+        self.lat_deque.append(data.latitude)
+        self.long_deque.append(data.longitude)
+
+        self.lat = sum(self.lat_deque) / len(self.lat_deque)
+        self.long = sum(self.long_deque) / len(self.long_deque)
 
     def update_imu(self, msg):
         orientation_q = msg.orientation
@@ -114,35 +137,20 @@ class Driver:
         self.imu_yaw = yaw
 
     def compute_distance_and_heading(self, lat1, lon1, lat2, lon2):
-        lat_to_m = 111320
-        long_to_m = 40075000 * math.cos(math.radians(lat1)) / 360
-        dx = (lon2 - lon1) * long_to_m
-        dy = (lat2 - lat1) * lat_to_m
-        distance = math.hypot(dx, dy)  # DEZE KLOPT
-        # heading = math.atan2(dy, dx) # THIS HEADING HAS TO BE CALCULATED DIFFERENTLY
-        heading = self.gps_heading(lat1, lon1, lat2, lon2)
-        # print("DISTANCE, HEADING:", distance, math.degrees(heading))
-        # GPS IS REALLY INACCURATE
-        return distance, heading
+        result = Geodesic.WGS84.Inverse(lat1, lon1, lat2, lon2)
+        # distance in meters
+        distance = result["s12"]
+        # heading in radians
+        heading = math.radians(result["azi1"])
 
-    def gps_heading(self, lat1, lon1, lat2, lon2):
-        delta_lon = math.radians(lon2 - lon1)
-        lat1_rad = math.radians(lat1)
-        lat2_rad = math.radians(lat2)
-
-        x = math.sin(delta_lon) * math.cos(lat2_rad)
-        y = math.cos(lat1_rad) * math.sin(lat2_rad) - math.sin(lat1_rad) * math.cos(
-            lat2_rad
-        ) * math.cos(delta_lon)
-
-        # HEADING IS POINTING OPPOSITE DIRECTION FOR SOME REASON SOMEONE CHANGE THIS IT SHOULD NOT BE THE CASE (thats why + pi)
-        heading = math.atan2(x, y) + math.pi
-        print("GPS HEADING:", math.degrees(heading))
+        # heading offset 270 degrees
+        heading += 0.5 * math.pi
         if heading > math.pi:
             heading -= 2 * math.pi
         elif heading < -math.pi:
             heading += 2 * math.pi
-        return heading
+
+        return distance, heading
 
     def apply_kalman_filter(self, gps_head, imu_head):
         self.fused_yaw = (1 - self.kalman_gain) * imu_head + self.kalman_gain * gps_head
@@ -164,7 +172,7 @@ class Driver:
         self.angle_prev_error = heading_error
 
         # Linear PID
-        if abs(heading_error) < 0.5:
+        if abs(heading_error) < self.MIN_DIST_FOR_HEADING:
             self.distance_integral += distance * dt
             distance_derivative = (distance - self.distance_prev_error) / dt
             linear_x = (
@@ -186,13 +194,11 @@ class Driver:
 
         gps_yaw_valid = False
         if self.previous_lat is not None:
-            dist_moved, _ = self.compute_distance_and_heading(
+            dist_moved, gps_head = self.compute_distance_and_heading(
                 self.previous_lat, self.previous_long, self.lat, self.long
             )
             if dist_moved > self.MIN_DIST_FOR_HEADING:
-                self.gps_heading_est = self.gps_heading(
-                    self.previous_lat, self.previous_long, self.lat, self.long
-                )
+                self.gps_heading_est = gps_head
                 gps_yaw_valid = True
 
         self.previous_lat = self.lat
@@ -212,7 +218,6 @@ class Driver:
 
         heading_error = self.target_heading - self.current_heading
 
-        heading_error -= math.pi
         if heading_error > math.pi:
             heading_error -= 2 * math.pi
         elif heading_error < -math.pi:
@@ -240,28 +245,31 @@ class Driver:
         """
         check if object too close to robot in front and updates twist accordingly
         """
-        if self.object == Object.NOBJECT:
-            twist.linear.x = 0.4
-            # twist.linear.x = 0  # hier
-            twist.angular.z = 0
-            self.rightdoor = 0
-            return False
-        elif self.rightdoor > 2:
-            twist.linear.x = 0.0
-            twist.angular.z = -0.4
-        elif self.object == Object.LEFT:
-            if self.prev_object == Object.RIGHT:
-                self.rightdoor += 1
-            twist.linear.x = 0.0
-            twist.angular.z = -0.4
-        # elif self.object == Object.RIGHT:
-        else:
-            if self.prev_object == Object.LEFT:
-                self.rightdoor += 1
-            twist.linear.x = 0.0
-            twist.angular.z = 0.4
+        # if self.object == Object.NOBJECT:
+        #     twist.linear.x = 0.4
+        #     # twist.linear.x = 0  # hier
+        #     twist.angular.z = 0
+        #     self.rightdoor = 0
+        #     return False
+        # elif self.rightdoor > 2:
+        #     twist.linear.x = 0.0
+        #     twist.angular.z = -0.4
+        # elif self.object == Object.LEFT:
+        #     if self.prev_object == Object.RIGHT:
+        #         self.rightdoor += 1
+        #     twist.linear.x = 0.0
+        #     twist.angular.z = -0.4
+        # # elif self.object == Object.RIGHT:
+        # else:
+        #     if self.prev_object == Object.LEFT:
+        #         self.rightdoor += 1
+        #     twist.linear.x = 0.0
+        #     twist.angular.z = 0.4
 
-        return True
+        twist.linear.x = 0.4
+
+        # return True
+        return False
 
     def start_heading_timer(self) -> None:
         self.previous_long = self.long
@@ -334,7 +342,7 @@ class Driver:
         )
 
         # check if already at target
-        if self.distance_to_target < 0.5:
+        if self.distance_to_target < self.MIN_DIST_FOR_TARGET:
             print("TARGET REACHED")
             self.update_gps_target()
             return

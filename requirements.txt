@@ -4,6 +4,7 @@ Markdown
 marshmallow
 flask-cors
 geopy
+geographiclib
 gpxpy
 numpy==1.23
 opencv-python
