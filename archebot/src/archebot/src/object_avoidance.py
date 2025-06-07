@@ -1,13 +1,11 @@
 import os
 import sys
-import time
 
 import numpy as np
 import rospy
-from std_msgs.msg import String, UInt8
-
-from depth_camera_functions import array_to_image, cam_to_array
+from depth_camera_functions import cam_to_array
 from enums import Object
+from std_msgs.msg import UInt8
 
 
 class Avoider:
