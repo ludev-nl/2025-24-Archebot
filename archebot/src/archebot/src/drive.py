@@ -345,7 +345,7 @@ class Driver:
         """
         main of Driver, runs every 0.1 seconds
         """
-        # check archebot_start flag
+        # so it runs after the user has set up the route and pushed the start button
         if os.environ.get("archebot_start") != "true":
             return
         # get the target coordinates from route.gpx if drive() is ran for first time
