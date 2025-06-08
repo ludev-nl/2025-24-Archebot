@@ -73,5 +73,5 @@ def test_update_gps_target():
     with pytest.raises(SystemExit) as wrapped_error:
         driver.update_gps_target()
 
-    assert wrapped_error.type == SystemExit
+    assert wrapped_error.type is SystemExit
     assert wrapped_error.value.code == 0
