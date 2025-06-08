@@ -1,2 +1,12 @@
-rospy==1.17.0
-sensor_msgs==1.13.1
+roslibpy
+Flask
+Markdown
+marshmallow
+flask-cors
+geopy
+geographiclib
+gpxpy
+numpy==1.23
+opencv-python
+ultralytics
+pytest
