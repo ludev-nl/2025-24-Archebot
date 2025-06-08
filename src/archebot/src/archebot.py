@@ -12,7 +12,7 @@ from gps_logger import log_location
 from object_avoidance import Avoider
 from sensor_msgs.msg import Image, NavSatFix, Imu
 from geometry_msgs.msg import Twist
-from std_msgs.msg import String
+from std_msgs.msg import String, UInt8
 
 # Add /server/src to PYTHONPATH
 sys.path.append(os.path.join(os.path.dirname(__file__), "server", "src"))
@@ -43,7 +43,7 @@ def main():
 
     # start avoider and driver instance
     rospy.Publisher("cmd_vel", Twist, queue_size=1)
-    rospy.Publisher("object_detection", String, queue_size=10)
+    rospy.Publisher("object_detection", UInt8, queue_size=10)
 
     # Instantiate components
     avoider = Avoider()
@@ -55,7 +55,7 @@ def main():
     rospy.Subscriber("/d455_camera/depth/image_rect_raw", Image, driver.drive)
     
     rospy.Subscriber("/camera/image_raw", Image, shard_detection.shard_detection)
-    rospy.Subscriber("object_detection", String, driver.update_object)
+    rospy.Subscriber("object_detection", UInt8, driver.update_object)
     rospy.Subscriber("/ublox/fix", NavSatFix, shard_detection.save_location)
     rospy.Subscriber("/ublox/fix", NavSatFix, log_location)
     rospy.Subscriber("/ublox_gps_node/fix", NavSatFix, driver.update_gps)
