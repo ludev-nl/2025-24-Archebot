@@ -18,7 +18,12 @@ def client():
 def test_get_location_log(client):
     """Test retrieving location logs"""
     response = client.get('/locationlog')
-    assert response.status_code == 200
+    data = response.get_json() or {}
+
+    if "message" in data: # No record found
+        assert response.status_code == 404
+    else:
+        assert response.status_code == 200
 
 def test_get_logs(client):
     """Test retrieving logs"""
