@@ -1,9 +1,8 @@
 import pytest
-import json
 import io
-
 import sys
 import os
+
 # Adjust path to find Flask app
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../src/server/src')))
 

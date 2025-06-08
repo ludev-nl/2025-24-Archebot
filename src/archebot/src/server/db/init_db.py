@@ -46,4 +46,5 @@ def initialize_db():
     conn.close()
     print("Database initialized successfully.")
 
-initialize_db()
+if __name__ == "__main__":
+    initialize_db()
