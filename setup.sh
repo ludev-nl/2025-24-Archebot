@@ -16,4 +16,5 @@ cd "$SCRIPT_DIR/src/archebot/src/server"
 
 # Build webapp
 cd "$SCRIPT_DIR/src/archebot/src/webapp"
+pnpm i
 pnpm build
