@@ -10,4 +10,4 @@ SCRIPT_DIR="$(dirname "$(readlink -f "$0")")"
 cd "$SCRIPT_DIR/src/archebot/src/webapp"
 
 # Launch webapp
-pnpm start
+pnpm start &
