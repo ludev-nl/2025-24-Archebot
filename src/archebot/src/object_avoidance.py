@@ -43,6 +43,10 @@ class Avoider:
         self.object = Object.NOBJECT
 
     def detect_object(self, data):
+        # only run this if already initialized
+        if not self.initialized:
+            return
+            
         self.counter += 1
 
         # detect_object is too slow to run every time the depth cam publishes data
