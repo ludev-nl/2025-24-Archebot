@@ -20,13 +20,13 @@ source "$SCRIPT_DIR/venv/bin/activate"
 echo "Virtual environment activated."
 
 # Required for some reason...
-pip install --upgrade pip wheel setuptools
+pip install --upgrade pip wheel setuptools -vvv --log
 deactivate
 source "$SCRIPT_DIR/venv/bin/activate"
 
 # Install dependencies
 echo "Installing dependencies..."
-pip install -r "$SCRIPT_DIR/../../../../requirements.txt"
+pip install -r "$SCRIPT_DIR/../../../../requirements.txt" -vvv --log
 echo "Dependencies installed."
 
 # Deactivate the venv
