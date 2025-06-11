@@ -19,7 +19,8 @@ echo "Activating virtual environment..."
 source "$SCRIPT_DIR/venv/bin/activate"
 echo "Virtual environment activated."
 
-python3 -m pip install wheel
+# Required for some reason...
+python3 -m pip install --upgrade pip wheel
 
 # Install dependencies
 echo "Installing dependencies..."
