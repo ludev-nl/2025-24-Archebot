@@ -1,3 +1,4 @@
+setuptools==61.0
 roslibpy
 Flask
 Markdown
