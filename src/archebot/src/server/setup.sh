@@ -26,7 +26,7 @@ source "$SCRIPT_DIR/venv/bin/activate"
 
 # Install dependencies
 echo "Installing dependencies..."
-pip install -r "$SCRIPT_DIR/../../../../requirements.txt" -vvv --log
+pip install -r "$SCRIPT_DIR/../../../../requirements.txt" -vvv
 echo "Dependencies installed."
 
 # Deactivate the venv
