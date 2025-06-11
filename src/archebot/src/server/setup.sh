@@ -19,11 +19,11 @@ echo "Activating virtual environment..."
 source "$SCRIPT_DIR/venv/bin/activate"
 echo "Virtual environment activated."
 
-python3 -m pip install testresources
-python3 -m pip install setuptools==61.0
 python3 -m pip install wheel
 deactivate
 source "$SCRIPT_DIR/venv/bin/activate"
+python3 -m pip install testresources
+python3 -m pip install setuptools==61.0
 
 # Install dependencies
 echo "Installing dependencies..."
