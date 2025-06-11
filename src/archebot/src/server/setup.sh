@@ -12,20 +12,20 @@ cd "$SCRIPT_DIR"
 # Check if virtual environment exists
 if [ ! -d "$SCRIPT_DIR/venv" ]; then
     echo "Creating virtual environment..."
-    virtualenv "$SCRIPT_DIR/venv" --no-wheel
+    python3 -m venv "$SCRIPT_DIR/venv" --no-wheel
 fi
 
 echo "Activating virtual environment..."
 source "$SCRIPT_DIR/venv/bin/activate"
 echo "Virtual environment activated."
 
-pip install --upgrade pip
-pip install setuptools --no-use-wheel --upgrade
-pip install wheel --no-cache
+python3 -m pip install --upgrade pip
+python3 -m pip install setuptools --no-use-wheel --upgrade
+python3 -m pip install wheel --no-cache
 
 # Install dependencies
 echo "Installing dependencies..."
-pip install -r "$SCRIPT_DIR/../../../../requirements.txt"
+python3 -m pip install -r "$SCRIPT_DIR/../../../../requirements.txt"
 echo "Dependencies installed."
 
 # Deactivate the venv
