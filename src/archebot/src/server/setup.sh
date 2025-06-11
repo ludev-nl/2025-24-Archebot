@@ -22,10 +22,12 @@ echo "Virtual environment activated."
 python3 -m pip install testresources
 python3 -m pip install setuptools==61.0
 python3 -m pip install wheel
+deactivate
+source "$SCRIPT_DIR/venv/bin/activate"
 
 # Install dependencies
 echo "Installing dependencies..."
-pip install -r "$SCRIPT_DIR/../../../../requirements.txt"
+python3 -m pip install -r "$SCRIPT_DIR/../../../../requirements.txt"
 echo "Dependencies installed."
 
 # Deactivate the venv
