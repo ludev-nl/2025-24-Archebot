@@ -21,6 +21,9 @@ echo "Virtual environment activated."
 
 # Required for some reason...
 python3 -m pip install --upgrade pip wheel
+python3 -m pip install --upgrade setuptools --user python
+deactivate
+source "$SCRIPT_DIR/venv/bin/activate"
 
 # Install dependencies
 echo "Installing dependencies..."
