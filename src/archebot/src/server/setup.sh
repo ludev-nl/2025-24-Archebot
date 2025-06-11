@@ -20,7 +20,7 @@ source "$SCRIPT_DIR/venv/bin/activate"
 echo "Virtual environment activated."
 
 # Required for some reason...
-pip install --upgrade pip wheel setuptools -vvv --log
+pip install --upgrade pip wheel setuptools -vvv
 deactivate
 source "$SCRIPT_DIR/venv/bin/activate"
 
