@@ -56,8 +56,8 @@ def main():
     
     rospy.Subscriber("/camera/image_raw", Image, shard_detection.shard_detection)
     rospy.Subscriber("object_detection", UInt8, driver.update_object)
-    rospy.Subscriber("/ublox/fix", NavSatFix, shard_detection.save_location)
-    rospy.Subscriber("/ublox/fix", NavSatFix, log_location)
+    rospy.Subscriber("/ublox_gps_node/fix", NavSatFix, shard_detection.save_location)
+    rospy.Subscriber("/ublox_gps_node/fix", NavSatFix, log_location)
     rospy.Subscriber("/ublox_gps_node/fix", NavSatFix, driver.update_gps)
     rospy.Subscriber("/imu/data", Imu, driver.update_imu)
 
